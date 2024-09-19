@@ -1,7 +1,7 @@
 #ifndef GBWTGRAPH_INTERNAL_H
 #define GBWTGRAPH_INTERNAL_H
 
-#include <gbwtgraph/gbz.h>
+#include "gbz.h"
 
 #include <iostream>
 #include <string>

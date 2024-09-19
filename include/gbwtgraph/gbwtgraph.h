@@ -7,7 +7,7 @@
 #include <gbwt/cached_gbwt.h>
 #include <gbwt/metadata.h>
 
-#include <gbwtgraph/utils.h>
+#include "utils.h"
 
 /*
   gbwtgraph.h: GBWT-based Handle Graph.

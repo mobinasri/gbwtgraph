@@ -3,7 +3,7 @@
 
 #include <gbwt/dynamic_gbwt.h>
 
-#include <gbwtgraph/gbwtgraph.h>
+#include "gbwtgraph.h"
 
 /*
   path_cover.h: Build GBWT from a path cover of a HandleGraph.

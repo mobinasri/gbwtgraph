@@ -13,8 +13,8 @@
 
 #include <gbwt/utils.h>
 
-#include <gbwtgraph/io.h>
-#include <gbwtgraph/utils.h>
+#include "io.h"
+#include "utils.h"
 
 /*
   minimizer.h: Kmer indexes and minimizer indexes.

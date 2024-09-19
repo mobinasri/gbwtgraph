@@ -1,7 +1,7 @@
 #ifndef GBWTGRAPH_GBZ_H
 #define GBWTGRAPH_GBZ_H
 
-#include <gbwtgraph/gbwtgraph.h>
+#include "gbwtgraph.h"
 
 /*
   gbz.h: GBZ file format.

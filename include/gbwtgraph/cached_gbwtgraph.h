@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include <gbwtgraph/gbwtgraph.h>
+#include "gbwtgraph.h"
 
 /*
   cached_gbwtgraph.h: A cached variant of GBWTGraph.

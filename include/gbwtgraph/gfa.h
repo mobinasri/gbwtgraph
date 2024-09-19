@@ -6,7 +6,7 @@
 
 #include <gbwt/dynamic_gbwt.h>
 
-#include <gbwtgraph/gbwtgraph.h>
+#include "gbwtgraph.h"
 
 /*
   gfa.h: Tools for building GBWTGraph from GFA.

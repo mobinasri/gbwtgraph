@@ -1,7 +1,7 @@
 #ifndef GBWTGRAPH_SUBGRAPH_H
 #define GBWTGRAPH_SUBGRAPH_H
 
-#include <gbwtgraph/gbz.h>
+#include "gbz.h"
 
 #include <sdsl/sd_vector.hpp>
 

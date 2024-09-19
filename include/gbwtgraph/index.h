@@ -8,8 +8,8 @@
 
 #include <omp.h>
 
-#include <gbwtgraph/gbwtgraph.h>
-#include <gbwtgraph/minimizer.h>
+#include "gbwtgraph.h"
+#include "minimizer.h"
 
 /*
   index.h: Minimizer index construction from GBWTGraph.

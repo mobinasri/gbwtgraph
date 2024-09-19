@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <gbwtgraph/gbwtgraph.h>
+#include "gbwtgraph.h"
 
 #include <gbwt/dynamic_gbwt.h>
 
