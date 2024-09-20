@@ -1,3 +1,4 @@
+#include "absl/log/absl_log.h"
 #include <gbwtgraph/path_cover.h>
 
 #include <gbwtgraph/algorithms.h>

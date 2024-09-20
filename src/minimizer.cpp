@@ -1,3 +1,4 @@
+#include "absl/log/absl_log.h"
 #include <gbwtgraph/minimizer.h>
 
 namespace gbwtgraph

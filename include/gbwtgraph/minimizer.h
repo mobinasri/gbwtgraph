@@ -1,6 +1,7 @@
 #ifndef GBWTGRAPH_MINIMIZER_H
 #define GBWTGRAPH_MINIMIZER_H
 
+#include "absl/log/absl_log.h"
 #include <algorithm>
 #include <cstdint>
 #include <functional>

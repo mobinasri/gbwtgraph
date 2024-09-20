@@ -1,3 +1,4 @@
+#include "absl/log/absl_log.h"
 #include <gbwtgraph/utils.h>
 #include <gbwtgraph/gbwtgraph.h>
 
