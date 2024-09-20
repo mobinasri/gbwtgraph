@@ -95,7 +95,7 @@ main(int argc, char** argv)
   }
   catch(const std::runtime_error& e)
   {
-    std::cerr << "subgraph_query: " << e.what() << std::endl;
+    std::cerr << "subgraph_query: " << "" << std::endl;
   }
 
   double seconds = gbwt::readTimer() - start;

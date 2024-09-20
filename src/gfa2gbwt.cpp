@@ -127,7 +127,7 @@ main(int argc, char** argv)
   }
   catch(const std::exception& e)
   {
-    std::cerr << "Error: " << e.what() << std::endl;
+    std::cerr << "Error: " << "" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
@@ -321,7 +321,7 @@ Config::Config(int argc, char** argv)
       try { this->output_parameters.mode = GFAExtractionParameters::get_mode(optarg); }
       catch(const std::exception& e)
       {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Error: " << "" << std::endl;
         std::exit(EXIT_FAILURE);
       }
       break;

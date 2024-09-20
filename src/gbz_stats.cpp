@@ -185,7 +185,7 @@ Config::Config(int argc, char** argv)
       try { this->window_length = std::stoul(optarg); }
       catch(std::exception& e)
       {
-        std::cerr << "Cannot parse --window " << optarg << ": " << e.what() << std::endl;
+        std::cerr << "Cannot parse --window " << optarg << ": " << "" << std::endl;
         std::exit(EXIT_FAILURE);
       }
       break;

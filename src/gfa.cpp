@@ -1135,7 +1135,7 @@ parse_paths(const GFAFile& gfa_file, const std::vector<ConstructionJob>& jobs, c
     }
     catch(const std::runtime_error& e)
     {
-      std::cerr << "Error: " << e.what() << std::endl;
+      std::cerr << "Error: " << "" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     builder.finish();

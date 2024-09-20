@@ -1220,7 +1220,7 @@ public:
     try { this->header.check(); }
     catch(const std::runtime_error& e)
     {
-      std::cerr << e.what() << std::endl;
+      std::cerr << "" << std::endl;
       return false;
     }
     if(this->header.key_bits() != KeyType::KEY_BITS)
