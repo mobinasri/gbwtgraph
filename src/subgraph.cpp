@@ -65,7 +65,7 @@ SubgraphQuery::path_interval(path_handle_t path, size_t from, size_t to, size_t 
   if(from >= to)
   {
     std::string msg = "SubgraphQuery::path_interval(): Empty interval [" + std::to_string(from) + ", " + std::to_string(to) + ")";
-    throw std::runtime_error(msg);
+    ABSL_LOG(FATAL) << msg;
   }
   size_t offset = from + (to - from) / 2;
 
@@ -138,7 +138,7 @@ find_position(const GBZ& gbz, const PathIndex& path_index, const SubgraphQuery& 
   if(position.second == gbwt::invalid_edge())
   {
     std::string msg = "Subgraph::Subgraph(): Could not find an indexed path position for query " + std::to_string(query.offset);
-    throw std::runtime_error(msg);
+    ABSL_LOG(FATAL) << msg;
   }
 
   while(true)
@@ -154,7 +154,7 @@ find_position(const GBZ& gbz, const PathIndex& path_index, const SubgraphQuery& 
     if(position.second.first == gbwt::ENDMARKER)
     {
       std::string msg = "Subgraph::Subgraph(): Path " + gbz.graph.get_path_name(query.path) + " does not contain offset " + std::to_string(query.offset);
-      throw std::runtime_error(msg);
+      ABSL_LOG(FATAL) << msg;
     }
   }
 }
@@ -399,7 +399,7 @@ Subgraph::extract_paths(const GBZ& gbz, const SubgraphQuery& query, const std::p
   if(ref_pos.second != gbwt::invalid_edge() && this->reference_path == std::numeric_limits<size_t>::max())
   {
     std::string msg = "Subgraph::Subgraph(): Reference path not found in the subgraph";
-    throw std::runtime_error(msg);
+    ABSL_LOG(FATAL) << msg;
   }
 }
 
@@ -461,7 +461,7 @@ Subgraph::Subgraph(const GBZ& gbz, const PathIndex* path_index, const SubgraphQu
     {
       if(path_index == nullptr)
       {
-        throw std::runtime_error("Subgraph::Subgraph(): Path index required for path queries");
+        ABSL_LOG(FATAL) << "Subgraph::Subgraph(): Path index required for path queries";
       }
       position = find_position(gbz, *path_index, query);
       this->reference_handle = query.path;
@@ -480,7 +480,7 @@ Subgraph::Subgraph(const GBZ& gbz, const PathIndex* path_index, const SubgraphQu
   default:
     {
       // NOTE: `path_interval_query` is currently implemented as a `path_offset_query` around the midpoint.
-      throw std::runtime_error("Subgraph::Subgraph(): Invalid query type");
+      ABSL_LOG(FATAL) << "Subgraph::Subgraph(): Invalid query type";
     }
   }
 

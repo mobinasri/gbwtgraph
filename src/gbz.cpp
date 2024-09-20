@@ -31,13 +31,13 @@ GBZ::Header::check() const
 {
   if(this->tag != TAG)
   {
-    throw sdsl::simple_sds::InvalidData("GBZ: Invalid tag");
+    ABSL_LOG(FATAL) << "GBZ: Invalid tag";
   }
 
   if(this->version != VERSION)
   {
     std::string msg = "GBZ: Expected v" + std::to_string(VERSION) + ", got v" + std::to_string(this->version);
-    throw sdsl::simple_sds::InvalidData(msg);
+    ABSL_LOG(FATAL) << msg;
   }
 
   std::uint64_t mask = 0;
@@ -48,7 +48,7 @@ GBZ::Header::check() const
   }
   if((this->flags & mask) != this->flags)
   {
-    throw sdsl::simple_sds::InvalidData("GBZ: Invalid flags");
+    ABSL_LOG(FATAL) << "GBZ: Invalid flags";
   }
 }
 
@@ -150,7 +150,7 @@ GBZ::GBZ(std::unique_ptr<gbwt::GBWT>& index, std::unique_ptr<SequenceSource>& so
 {
   if(index == nullptr || source == nullptr)
   {
-    throw std::runtime_error("GBZ: Index and sequence source must be non-null");
+    ABSL_LOG(FATAL) << "GBZ: Index and sequence source must be non-null";
   }
 
   this->add_source();
@@ -162,7 +162,7 @@ GBZ::GBZ(std::unique_ptr<gbwt::GBWT>& index, const HandleGraph& source)
 {
   if(index == nullptr)
   {
-    throw std::runtime_error("GBZ: Index must be non-null");
+    ABSL_LOG(FATAL) << "GBZ: Index must be non-null";
   }
 
   this->add_source();

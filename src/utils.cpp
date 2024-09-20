@@ -312,7 +312,7 @@ set_sample_path_senses(gbwt::Tags& tags, const std::unordered_map<std::string, P
       // If the sample isn't set, it must be a generic named path.
       if(kv.second != PathSense::GENERIC)
       {
-        throw std::runtime_error("Cannot store a sense other than generic in GBWT tags for the no-sample sample.");
+        ABSL_LOG(FATAL) << "Cannot store a sense other than generic in GBWT tags for the no-sample sample.";
       }
       continue;
     }
@@ -328,7 +328,7 @@ set_sample_path_senses(gbwt::Tags& tags, const std::unordered_map<std::string, P
       reference_sample_names.erase(kv.first);
     } else {
       // We can't actually set this sense.
-      throw std::runtime_error("Cannot store sense " + std::to_string((int)kv.second) + " in GBWT tags for sample " + kv.first);
+      ABSL_LOG(FATAL) << "Cannot store sense " + std::to_string((int)kv.second) + " in GBWT tags for sample " + kv.first;
     }
   }
 
@@ -553,11 +553,11 @@ MetadataBuilder::PathMetadataBuilder::PathMetadataBuilder(const std::string& pat
   try { this->parser = std::regex(path_name_regex); }
   catch(std::regex_error& e)
   {
-    throw std::runtime_error("MetadataBuilder: Invalid regex: " + path_name_regex);
+    ABSL_LOG(FATAL) << "MetadataBuilder: Invalid regex: " + path_name_regex;
   }
   if(path_name_fields.size() > this->parser.mark_count() + 1)
   {
-    throw std::runtime_error("MetadataBuilder: Field string too long: " + path_name_fields);
+    ABSL_LOG(FATAL) << "MetadataBuilder: Field string too long: " + path_name_fields;
   }
 
   // Initialize the fields.
@@ -568,28 +568,28 @@ MetadataBuilder::PathMetadataBuilder::PathMetadataBuilder(const std::string& pat
       case 's':
         if(this->sample_field != NO_FIELD)
         {
-          throw std::runtime_error("MetadataBuilder: Duplicate sample field");
+          ABSL_LOG(FATAL) << "MetadataBuilder: Duplicate sample field";
         }
         this->sample_field = i;
         break;
       case 'c':
         if(this->contig_field != NO_FIELD)
         {
-          throw std::runtime_error("MetadataBuilder: Duplicate contig field");
+          ABSL_LOG(FATAL) << "MetadataBuilder: Duplicate contig field";
         }
         this->contig_field = i;
         break;
       case 'h':
         if(this->haplotype_field != NO_FIELD)
         {
-          throw std::runtime_error("MetadataBuilder: Duplicate haplotype field");
+          ABSL_LOG(FATAL) << "MetadataBuilder: Duplicate haplotype field";
         }
         this->haplotype_field = i;
         break;
       case 'f':
         if(this->fragment_field != NO_FIELD)
         {
-          throw std::runtime_error("MetadataBuilder: Duplicate fragment field");
+          ABSL_LOG(FATAL) << "MetadataBuilder: Duplicate fragment field";
         }
         this->fragment_field = i;
         break;
@@ -608,13 +608,13 @@ MetadataBuilder::MetadataBuilder(const gbwt::Metadata& metadata) :
 {
   // Sanity checks.
   if(!metadata.hasSampleNames() && metadata.samples() > 0) {
-    throw std::runtime_error("MetadataBuilder(): Cannot use metadata without sample names");
+    ABSL_LOG(FATAL) << "MetadataBuilder(): Cannot use metadata without sample names";
   }
   if(!metadata.hasContigNames() && metadata.contigs() > 0) {
-    throw std::runtime_error("MetadataBuilder(): Cannot use metadata without contig names");
+    ABSL_LOG(FATAL) << "MetadataBuilder(): Cannot use metadata without contig names";
   }
   if(!metadata.hasPathNames() && metadata.paths() > 0) {
-    throw std::runtime_error("MetadataBuilder(): Cannot use metadata without path names");
+    ABSL_LOG(FATAL) << "MetadataBuilder(): Cannot use metadata without path names";
   }
 
   for(size_t i = 0; i < metadata.sample_names.size(); i++)
@@ -747,7 +747,7 @@ MetadataBuilder::add_path(PathSense sense, const std::string& sample_name, const
       if(phase_block != PathMetadata::NO_PHASE_BLOCK || subrange != PathMetadata::NO_SUBRANGE)
       {
         // The count was user-specified, so bail out.
-        throw std::runtime_error("MetadataBuilder: Duplicate path for " + ss.str());
+        ABSL_LOG(FATAL) << "MetadataBuilder: Duplicate path for " + ss.str(;
       }
       else
       {
@@ -805,7 +805,7 @@ MetadataBuilder::add_path(const std::string& name, size_t job)
       try { haplotype = std::stoul(fields[format.haplotype_field]); }
       catch(const std::invalid_argument&)
       {
-        throw std::runtime_error("MetadataBuilder: Invalid haplotype field " + fields[format.haplotype_field].str());
+        ABSL_LOG(FATAL) << "MetadataBuilder: Invalid haplotype field " + fields[format.haplotype_field].str(;
       }
     }
 
@@ -815,14 +815,14 @@ MetadataBuilder::add_path(const std::string& name, size_t job)
       try { phase_block = std::stoul(fields[format.fragment_field]); }
       catch(const std::invalid_argument&)
       {
-        throw std::runtime_error("MetadataBuilder: Invalid fragment field " + fields[format.fragment_field].str());
+        ABSL_LOG(FATAL) << "MetadataBuilder: Invalid fragment field " + fields[format.fragment_field].str(;
       }
     }
 
     this->add_path(format.sense, sample_name, locus_name, haplotype, phase_block, PathMetadata::NO_SUBRANGE, job);
     return;
   }
-  throw std::runtime_error("MetadataBuilder: Cannot parse path name " + name);
+  ABSL_LOG(FATAL) << "MetadataBuilder: Cannot parse path name " + name;
 }
 
 void
@@ -843,7 +843,7 @@ MetadataBuilder::add_walk(const std::string& sample, const std::string& haplotyp
     try { subrange.first = std::stoul(start); }
     catch(const std::invalid_argument&)
     {
-      throw std::runtime_error("MetadataBuilder: Invalid start position " + start);
+      ABSL_LOG(FATAL) << "MetadataBuilder: Invalid start position " + start;
     }
 
     this->add_path(PathSense::GENERIC, PathMetadata::NO_SAMPLE_NAME, contig, PathMetadata::NO_HAPLOTYPE, PathMetadata::NO_PHASE_BLOCK, subrange, job);
@@ -855,7 +855,7 @@ MetadataBuilder::add_walk(const std::string& sample, const std::string& haplotyp
     try { haplotype_number = std::stoul(haplotype); }
     catch(const std::invalid_argument&)
     {
-      throw std::runtime_error("MetadataBuilder: Invalid haplotype field " + haplotype);
+      ABSL_LOG(FATAL) << "MetadataBuilder: Invalid haplotype field " + haplotype;
     }
 
     // Start position as fragment identifier.
@@ -863,7 +863,7 @@ MetadataBuilder::add_walk(const std::string& sample, const std::string& haplotyp
     try { phase_block = std::stoul(start); }
     catch(const std::invalid_argument&)
     {
-      throw std::runtime_error("MetadataBuilder: Invalid start position " + start);
+      ABSL_LOG(FATAL) << "MetadataBuilder: Invalid start position " + start;
     }
 
     // Add as a haplotype

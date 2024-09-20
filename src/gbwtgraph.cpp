@@ -52,13 +52,13 @@ GBWTGraph::Header::check() const
 {
   if(this->tag != TAG)
   {
-    throw sdsl::simple_sds::InvalidData("GBWTGraph: Invalid tag");
+    ABSL_LOG(FATAL) << "GBWTGraph: Invalid tag";
   }
 
   if(this->version > VERSION || this->version < OLD_VERSION)
   {
     std::string msg = "GBWTGraph: Expected v" + std::to_string(OLD_VERSION) + " to v" + std::to_string(VERSION) + ", got v" + std::to_string(this->version);
-    throw sdsl::simple_sds::InvalidData(msg);
+    ABSL_LOG(FATAL) << msg;
   }
 
   std::uint64_t mask = 0;
@@ -73,7 +73,7 @@ GBWTGraph::Header::check() const
   }
   if((this->flags & mask) != this->flags)
   {
-    throw sdsl::simple_sds::InvalidData("GBWTGraph: Invalid flags");
+    ABSL_LOG(FATAL) << "GBWTGraph: Invalid flags";
   }
 }
 
@@ -170,27 +170,27 @@ GBWTGraph::sanity_checks()
   size_t nodes = sdsl::util::cnt_one_bits(this->real_nodes);
   if(nodes != this->header.nodes)
   {
-    throw sdsl::simple_sds::InvalidData("GBWTGraph: Invalid number of set bits in real_nodes");
+    ABSL_LOG(FATAL) << "GBWTGraph: Invalid number of set bits in real_nodes";
   }
 
   size_t potential_nodes = this->sequences.size();
   if(this->index != nullptr && !(this->index->empty())) { potential_nodes =  this->index->sigma() - this->index->firstNode(); }
   if(this->sequences.size() != potential_nodes)
   {
-    throw sdsl::simple_sds::InvalidData("GBWTGraph: Node range / sequence count mismatch");
+    ABSL_LOG(FATAL) << "GBWTGraph: Node range / sequence count mismatch";
   }
   if(this->real_nodes.size() != potential_nodes / 2)
   {
-    throw sdsl::simple_sds::InvalidData("GBWTGraph: Node range / real_nodes size mismatch");
+    ABSL_LOG(FATAL) << "GBWTGraph: Node range / real_nodes size mismatch";
   }
 
   if(this->node_to_segment.ones() != this->segments.size())
   {
-    throw sdsl::simple_sds::InvalidData("GBWTGraph: Segment count / node_to_segment mapping mismatch");
+    ABSL_LOG(FATAL) << "GBWTGraph: Segment count / node_to_segment mapping mismatch";
   }
   if(this->segments.size() > 0 && this->index != nullptr && this->node_to_segment.size() != this->index->sigma() / 2)
   {
-    throw sdsl::simple_sds::InvalidData("GBWTGraph: GBWT alphabet / node_to_segment size mismatch");
+    ABSL_LOG(FATAL) << "GBWTGraph: GBWT alphabet / node_to_segment size mismatch";
   }
 }
 
@@ -244,7 +244,7 @@ GBWTGraph::copy_translation(const NamedNodeBackTranslation& translation) const
       if(translated_back.size() != 1)
       {
         // This node didn't come from a segment, or spans multiple segments
-        throw InvalidGBWT("GBWTGraph: Node " + std::to_string(node_id) + " did not come from exactly one segment");
+        ABSL_LOG(FATAL) << "GBWTGraph: Node " + std::to_string(node_id) + " did not come from exactly one segment";
       }
       nid_t& segment_number = std::get<0>(translated_back[0]);
       bool& reverse_on_segment = std::get<1>(translated_back[0]);
@@ -252,7 +252,7 @@ GBWTGraph::copy_translation(const NamedNodeBackTranslation& translation) const
       if(reverse_on_segment)
       {
         // We can only deal with nodes on the forward strands of their segments.
-        throw InvalidGBWT("GBWTGraph: Node " + std::to_string(node_id) + " came from the reverse strand of its segment");
+        ABSL_LOG(FATAL) << "GBWTGraph: Node " + std::to_string(node_id) + " came from the reverse strand of its segment";
       }
       if(!prev_node_existed || prev_segment_number != segment_number)
       {
@@ -266,7 +266,7 @@ GBWTGraph::copy_translation(const NamedNodeBackTranslation& translation) const
       if(offset_along_segment != next_offset_along_segment)
       {
         // Actually we're not at the right place in the segment, so we can't store this translation.
-        throw InvalidGBWT("GBWTGraph: Node " + std::to_string(node_id) + " not at expected position in segment");
+        ABSL_LOG(FATAL) << "GBWTGraph: Node " + std::to_string(node_id) + " not at expected position in segment";
       }
       next_offset_along_segment += node_length;
     }
@@ -534,7 +534,7 @@ GBWTGraph::cache_named_paths()
   }
   if(this->name_to_path.size() != this->named_paths.size())
   {
-     throw InvalidGBWT("GBWTGraph: Named path names are not unique");
+     ABSL_LOG(FATAL) << "GBWTGraph: Named path names are not unique";
   }
 
   // Cache named path information we get from traversing the paths.
@@ -850,7 +850,7 @@ GBWTGraph::get_step_count(const path_handle_t& path_handle) const
     }
     break;
   default:
-    throw std::runtime_error("Unimplemented sense!");
+    ABSL_LOG(FATAL) << "Unimplemented sense!";
   }
 
 }
@@ -916,7 +916,7 @@ GBWTGraph::path_begin(const path_handle_t& path_handle) const {
     }
     break;
   default:
-    throw std::runtime_error("Unimplemented sense!");
+    ABSL_LOG(FATAL) << "Unimplemented sense!";
   }
 
   step_handle_t step;
@@ -1011,7 +1011,7 @@ GBWTGraph::path_back(const path_handle_t& path_handle) const {
     }
     break;
   default:
-    throw std::runtime_error("Unimplemented sense!");
+    ABSL_LOG(FATAL) << "Unimplemented sense!";
   }
 
   step_handle_t step;
@@ -1823,7 +1823,7 @@ GBWTGraph::deserialize_members(std::istream& in)
   {
     if(this->index == nullptr)
     {
-      throw InvalidGBWT("GBWTGraph: A GBWT index is required for loading simple-sds format");
+      ABSL_LOG(FATAL) << "GBWTGraph: A GBWT index is required for loading simple-sds format";
     }
     {
       gbwt::StringArray forward_only;
@@ -1856,7 +1856,7 @@ GBWTGraph::deserialize_members(std::istream& in)
     this->node_to_segment.simple_sds_load(in);
     if(this->header.get(Header::FLAG_TRANSLATION) != (this->segments.size() > 0))
     {
-      throw sdsl::simple_sds::InvalidData("GBWTGraph: Invalid translation flag in the header");
+      ABSL_LOG(FATAL) << "GBWTGraph: Invalid translation flag in the header";
     }
   }
   else if(this->header.get(Header::FLAG_TRANSLATION))
@@ -1875,7 +1875,7 @@ GBWTGraph::set_gbwt(const gbwt::GBWT& gbwt_index)
 
   if(!(this->index->bidirectional()))
   {
-    throw InvalidGBWT("GBWTGraph: The GBWT index must be bidirectional");
+    ABSL_LOG(FATAL) << "GBWTGraph: The GBWT index must be bidirectional";
   }
 
   this->reference_samples = parse_reference_samples_tag(*(this->index));

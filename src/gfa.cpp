@@ -320,21 +320,21 @@ GFAFile::GFAFile(const std::string& filename, bool show_progress) :
   this->fd = ::open(filename.c_str(), O_RDONLY);
   if(this->fd < 0)
   {
-    throw std::runtime_error("GFAFile: Cannot open file " + filename);
+    ABSL_LOG(FATAL) << "GFAFile: Cannot open file " + filename;
   }
 
   // Memory map the file.
   struct stat st;
   if(::fstat(this->fd, &st) < 0)
   {
-    throw std::runtime_error("GFAFile: Cannot stat file " + filename);
+    ABSL_LOG(FATAL) << "GFAFile: Cannot stat file " + filename;
   }
   this->file_size = st.st_size;
 
   void* temp_ptr = ::mmap(nullptr, file_size, PROT_READ, MAP_FILE | MAP_SHARED, this->fd, 0);
   if(temp_ptr == MAP_FAILED)
   {
-    throw std::runtime_error("GFAFile: Cannot memory map file " + filename);
+    ABSL_LOG(FATAL) << "GFAFile: Cannot memory map file " + filename;
   }
   ::madvise(temp_ptr, file_size, MADV_SEQUENTIAL); // We will be making sequential passes over the data.
   this->ptr = static_cast<char*>(temp_ptr);
@@ -415,7 +415,7 @@ GFAFile::add_h_line(const char* iter, size_t line_num)
   if(this->h_line != nullptr)
   {
     // We can have only one H line in a file.
-    throw std::runtime_error("GFAFile: duplicate header at line " + std::to_string(line_num)); 
+    ABSL_LOG(FATAL) << "GFAFile: duplicate header at line " + std::to_string(line_num); 
   }
   this->h_line = iter;
   
@@ -429,7 +429,7 @@ GFAFile::add_h_line(const char* iter, size_t line_num)
     field = this->next_field(field);
     if(!field.valid_tag())
     {
-      throw std::runtime_error("GFAFile: Invalid header tag " + field.str() + " on line " + std::to_string(line_num));
+      ABSL_LOG(FATAL) << "GFAFile: Invalid header tag " + field.str() + " on line " + std::to_string(line_num);
     }
     // Save them all.
     h_tags.push_back(field.begin);
@@ -487,7 +487,7 @@ GFAFile::add_l_line(const char* iter, size_t line_num)
   this->check_field(field, "source orientation", true);
   if(!(field.valid_orientation()))
   {
-    throw std::runtime_error("GFAFile: Invalid source orientation " + field.str() + " on line " + std::to_string(line_num));
+    ABSL_LOG(FATAL) << "GFAFile: Invalid source orientation " + field.str() + " on line " + std::to_string(line_num);
   }
 
   // Destination segment field.
@@ -499,7 +499,7 @@ GFAFile::add_l_line(const char* iter, size_t line_num)
   this->check_field(field, "destination orientation", false);
   if(!(field.valid_orientation()))
   {
-    throw std::runtime_error("GFAFile: Invalid destination orientation " + field.str() + " on line " + std::to_string(line_num));
+    ABSL_LOG(FATAL) << "GFAFile: Invalid destination orientation " + field.str() + " on line " + std::to_string(line_num);
   }
 
   return this->next_line(field.end);
@@ -525,14 +525,14 @@ GFAFile::add_p_line(const char* iter, size_t line_num)
     field = this->next_subfield(field);
     if(!(field.valid_path_segment()))
     {
-      throw std::runtime_error("GFAFile: Invalid path segment " + field.str() + " on line " + std::to_string(line_num));
+      ABSL_LOG(FATAL) << "GFAFile: Invalid path segment " + field.str() + " on line " + std::to_string(line_num);
     }
     path_length++;
   }
   while(field.has_next);
   if(path_length == 0)
   {
-    throw std::runtime_error("GFAFile: The path on line " + std::to_string(line_num) + " is empty");
+    ABSL_LOG(FATAL) << "GFAFile: The path on line " + std::to_string(line_num) + " is empty";
   }
   this->max_path_length = std::max(this->max_path_length, path_length);
 
@@ -576,14 +576,14 @@ GFAFile::add_w_line(const char* iter, size_t line_num)
     field = this->next_walk_subfield(field);
     if(!(field.valid_walk_segment()))
     {
-      throw std::runtime_error("GFAFile: Invalid walk segment " + field.str() + " on line " + std::to_string(line_num));
+      ABSL_LOG(FATAL) << "GFAFile: Invalid walk segment " + field.str() + " on line " + std::to_string(line_num);
     }
     path_length++;
   }
   while(field.has_next);
   if(path_length == 0)
   {
-    throw std::runtime_error("GFAFile: The walk on line " + std::to_string(line_num) + " is empty");
+    ABSL_LOG(FATAL) << "GFAFile: The walk on line " + std::to_string(line_num) + " is empty";
   }
   this->max_path_length = std::max(this->max_path_length, path_length);
 
@@ -595,11 +595,11 @@ GFAFile::check_field(const field_type& field, const std::string& field_name, boo
 {
   if(field.empty())
   {
-    throw std::runtime_error("GFAFile: " + std::string(field.type, 1) + "-line " + std::to_string(field.line_num) + " has no " + field_name);
+    ABSL_LOG(FATAL) << "GFAFile: " + std::string(field.type, 1) + "-line " + std::to_string(field.line_num) + " has no " + field_name;
   }
   if(should_have_next && !(field.has_next))
   {
-    throw std::runtime_error("GFAFile: " + std::string(field.type, 1) + "-line " + std::to_string(field.line_num) + " ended after " + field_name);
+    ABSL_LOG(FATAL) << "GFAFile: " + std::string(field.type, 1) + "-line " + std::to_string(field.line_num) + " ended after " + field_name;
   }
 }
 
@@ -835,7 +835,7 @@ check_gfa_file(const GFAFile& gfa_file, const GFAParsingParameters& parameters)
 {
   if(gfa_file.segments() == 0)
   {
-    throw std::runtime_error("No segments in the GFA file");
+    ABSL_LOG(FATAL) << "No segments in the GFA file";
   }
   if(gfa_file.paths() > 0)
   {
@@ -846,7 +846,7 @@ check_gfa_file(const GFAFile& gfa_file, const GFAParsingParameters& parameters)
   }
   if(gfa_file.paths() == 0 && gfa_file.walks() == 0)
   {
-    throw std::runtime_error("No paths or walks in the GFA file");
+    ABSL_LOG(FATAL) << "No paths or walks in the GFA file";
   }
 }
 
@@ -954,12 +954,12 @@ parse_links(const GFAFile& gfa_file, const SequenceSource& source, EmptyGraph& g
     std::pair<nid_t, nid_t> from_nodes = source.force_translate(from);
     if(from_nodes == SequenceSource::invalid_translation())
     {
-      throw std::runtime_error("Invalid source segment " + from);
+      ABSL_LOG(FATAL) << "Invalid source segment " + from;
     }
     std::pair<nid_t, nid_t> to_nodes = source.force_translate(to);
     if(to_nodes == SequenceSource::invalid_translation())
     {
-      throw std::runtime_error("Invalid destination segment " + to);
+      ABSL_LOG(FATAL) << "Invalid destination segment " + to;
     }
     nid_t from_node = (from_is_reverse ? from_nodes.first : from_nodes.second - 1);
     nid_t to_node = (to_is_reverse ? to_nodes.second - 1 : to_nodes.first);
@@ -1013,8 +1013,8 @@ parse_header_tags(const GFAFile& gfa_file, const GFAParsingParameters& parameter
       {
         // It's not the type we want. Bail out.
         // TODO: Maybe tolerate other people using this tag name?
-        throw std::runtime_error("Expected GFA header tag " + name +
-                                 " to have type Z, not type " + std::string(1, type));
+        ABSL_LOG(FATAL) << "Expected GFA header tag " + name +
+                                 " to have type Z, not type " + std::string(1, type);
       }
       // Grab the string tag value. It's already in the right format to be a GBWT tag value.
       result[REFERENCE_SAMPLE_LIST_GBWT_TAG] = std::string(value.first, value.first + value.second);
@@ -1086,7 +1086,7 @@ parse_paths(const GFAFile& gfa_file, const std::vector<ConstructionJob>& jobs, c
     std::pair<nid_t, nid_t> range = source.force_translate(name);
     if(range == SequenceSource::invalid_translation())
     {
-      throw std::runtime_error("Invalid segment " + name);
+      ABSL_LOG(FATAL) << "Invalid segment " + name;
     }
     gbwt::vector_type& current_path = current_paths[omp_get_thread_num()];
     if(is_reverse)
@@ -1199,7 +1199,7 @@ determine_jobs(const GFAFile& gfa_file, const SequenceSource& source, std::uniqu
     }
     else
     {
-      throw std::runtime_error("Invalid path segment " + first_segment);
+      ABSL_LOG(FATAL) << "Invalid path segment " + first_segment;
     }
   });
   gfa_file.for_each_walk_start([&](const char* line_start, const std::string& first_segment)
@@ -1212,7 +1212,7 @@ determine_jobs(const GFAFile& gfa_file, const SequenceSource& source, std::uniqu
     }
     else
     {
-      throw std::runtime_error("Invalid walk segment " + first_segment);
+      ABSL_LOG(FATAL) << "Invalid walk segment " + first_segment;
     }
   });
 
@@ -1299,7 +1299,7 @@ GFAExtractionParameters::get_mode(const std::string& name)
   if(name == "default") { return mode_default; }
   if(name == "pan-sn") { return mode_pan_sn; }
   if(name == "ref-only") { return mode_ref_only; }
-  throw std::runtime_error(std::string("Invalid path extraction mode: ") + name);
+  ABSL_LOG(FATAL) << std::string("Invalid path extraction mode: ") + name;
 }
 
 //------------------------------------------------------------------------------

@@ -309,19 +309,19 @@ MinimizerHeader::check() const
 {
   if(this->tag != TAG)
   {
-    throw sdsl::simple_sds::InvalidData("MinimizerHeader: Invalid tag");
+    ABSL_LOG(FATAL) << "MinimizerHeader: Invalid tag";
   }
 
   if(this->version < V8_VERSION || this->version > VERSION)
   {
     std::string msg = "MinimizerHeader: Expected v" + std::to_string(V8_VERSION) + " to " + std::to_string(VERSION) + ", got v" + std::to_string(this->version);
-    throw sdsl::simple_sds::InvalidData(msg);
+    ABSL_LOG(FATAL) << msg;
   }
 
   std::uint64_t mask = (this->version == V8_VERSION ? V8_FLAG_MASK : FLAG_MASK);
   if((this->flags & mask) != this->flags)
   {
-    throw sdsl::simple_sds::InvalidData("MinimizerHeader: Invalid flags");
+    ABSL_LOG(FATAL) << "MinimizerHeader: Invalid flags";
   }
 }
 
@@ -375,7 +375,7 @@ Key64::encode(const std::string& sequence)
     auto packed_char = KmerEncoding::CHAR_TO_PACK[static_cast<std::uint8_t>(c)];
     if(packed_char > KmerEncoding::PACK_MASK)
     {
-      throw std::runtime_error("Key64::encode(): Cannot encode character '" + std::to_string(c) + "'");
+      ABSL_LOG(FATAL) << "Key64::encode(): Cannot encode character '" + std::to_string(c) + "'";
     }
     packed = (packed << KmerEncoding::PACK_WIDTH) | packed_char;
   }
@@ -427,7 +427,7 @@ Key128::encode(const std::string& sequence)
     auto packed_char = KmerEncoding::CHAR_TO_PACK[static_cast<std::uint8_t>(c)];
     if(packed_char > KmerEncoding::PACK_MASK)
     {
-      throw std::runtime_error("Key128::encode(): Cannot encode character '" + std::to_string(c) + "'");
+      ABSL_LOG(FATAL) << "Key128::encode(): Cannot encode character '" + std::to_string(c) + "'";
     }
     
     code_type& pack_to = (i < sequence.size() - low_limit) ? packed_high : packed_low;

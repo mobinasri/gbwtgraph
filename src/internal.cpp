@@ -81,7 +81,7 @@ EmptyGraph::create_edge(const handle_t& from, const handle_t& to)
   {
     nid_t from_id = gbwt::Node::id(handle_to_node(from));
     nid_t to_id = gbwt::Node::id(handle_to_node(to));
-    throw std::runtime_error("EmptyGraph: Cannot create an edge between nodes " + std::to_string(from_id) + " and " + std::to_string(to_id));
+    ABSL_LOG(FATAL) << "EmptyGraph: Cannot create an edge between nodes " + std::to_string(from_id) + " and " + std::to_string(to_id;
   }
 
   // from -> to
