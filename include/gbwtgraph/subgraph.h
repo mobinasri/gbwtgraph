@@ -163,6 +163,9 @@ public:
   // Convert the subgraph to GFA.
   void to_gfa(const GBZ& gbz, std::ostream& out) const;
 
+  gbwt::FullPathName reference_path_name(const GBZ& gbz) const;
+
+  const std::string* cigar(size_t path_id) const;
 private:
   // Extract the paths within the subgraph and determine reference path information.
   void extract_paths(const GBZ& gbz, const SubgraphQuery& query, const std::pair<pos_t, gbwt::edge_type>& ref_pos);
@@ -170,10 +173,7 @@ private:
   // Update the paths according to query type.
   void update_paths(const SubgraphQuery& query);
 
-  gbwt::FullPathName reference_path_name(const GBZ& gbz) const;
-
   const size_t* weight(size_t path_id) const;
-  const std::string* cigar(size_t path_id) const;
 };
 
 //------------------------------------------------------------------------------
