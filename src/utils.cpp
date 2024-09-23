@@ -748,7 +748,7 @@ MetadataBuilder::add_path(PathSense sense, const std::string& sample_name, const
       if(phase_block != PathMetadata::NO_PHASE_BLOCK || subrange != PathMetadata::NO_SUBRANGE)
       {
         // The count was user-specified, so bail out.
-        ABSL_LOG(FATAL) << "MetadataBuilder: Duplicate path for " + ss.str(;
+        ABSL_LOG(FATAL) << "MetadataBuilder: Duplicate path for " + ss.str();
       }
       else
       {
@@ -806,7 +806,7 @@ MetadataBuilder::add_path(const std::string& name, size_t job)
       try { haplotype = std::stoul(fields[format.haplotype_field]); }
       catch(const std::invalid_argument&)
       {
-        ABSL_LOG(FATAL) << "MetadataBuilder: Invalid haplotype field " + fields[format.haplotype_field].str(;
+        ABSL_LOG(FATAL) << "MetadataBuilder: Invalid haplotype field " + fields[format.haplotype_field].str();
       }
     }
 
@@ -816,7 +816,7 @@ MetadataBuilder::add_path(const std::string& name, size_t job)
       try { phase_block = std::stoul(fields[format.fragment_field]); }
       catch(const std::invalid_argument&)
       {
-        ABSL_LOG(FATAL) << "MetadataBuilder: Invalid fragment field " + fields[format.fragment_field].str(;
+        ABSL_LOG(FATAL) << "MetadataBuilder: Invalid fragment field " + fields[format.fragment_field].str();
       }
     }
 
