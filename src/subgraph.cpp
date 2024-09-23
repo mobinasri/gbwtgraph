@@ -505,7 +505,7 @@ gbwt::FullPathName
 Subgraph::reference_path_name(const GBZ& gbz) const
 {
   gbwt::size_type path_id = gbz.graph.handle_to_path(this->reference_handle);
-  gbwt::FullPathName path_name = gbz.index.metadata.full_path(path_id);
+  gbwt::FullPathName path_name = gbz.index.metadata.fullPath(path_id);
   path_name.offset = this->reference_start;
   return path_name;
 }
