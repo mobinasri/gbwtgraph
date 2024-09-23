@@ -9,7 +9,7 @@
 
 #include <arpa/inet.h>
 
-#include <omp.h>
+//#include <omp.h>
 
 namespace gbwtgraph
 {
@@ -539,7 +539,7 @@ GBWTGraph::cache_named_paths()
   }
 
   // Cache named path information we get from traversing the paths.
-  #pragma omp parallel for schedule(dynamic, 1)
+  //#pragma omp parallel for schedule(dynamic, 1)
   for(size_t i = 0; i < this->named_paths.size(); i++)
   {
     NamedPath& path = this->named_paths[i];
@@ -651,7 +651,7 @@ GBWTGraph::for_each_handle_impl(const std::function<bool(const handle_t&)>& iter
 {
   if(parallel)
   {
-    #pragma omp parallel for schedule(dynamic, CHUNK_SIZE)
+    //#pragma omp parallel for schedule(dynamic, CHUNK_SIZE)
     for(gbwt::node_type node = this->index->firstNode(); node < this->index->sigma(); node += 2)
     {
       if(!(this->real_nodes[this->node_offset(node) / 2])) { continue; }

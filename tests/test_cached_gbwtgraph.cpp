@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 
-#include <omp.h>
+//#include <omp.h>
 
 #include <gbwtgraph/cached_gbwtgraph.h>
 
@@ -200,16 +200,16 @@ TEST_F(GraphOperations, ForEachHandle)
   ASSERT_EQ(found_handles, correct_handles) << "Sequential: Wrong handles in the graph";
 
   found_handles.clear();
-  int old_thread_count = omp_get_max_threads();
-  omp_set_num_threads(2);
+  //int old_thread_count = omp_get_max_threads();
+  //omp_set_num_threads(2);
   this->cached_graph.for_each_handle([&](const handle_t& handle)
   {
-    #pragma omp critical
+    //#pragma omp critical
     {
       found_handles.push_back(handle);
     }
   }, false);
-  omp_set_num_threads(old_thread_count);
+  //omp_set_num_threads(old_thread_count);
   std::sort(correct_handles.begin(), correct_handles.end());
   std::sort(found_handles.begin(), found_handles.end());
   ASSERT_EQ(found_handles, correct_handles) << "Parallel: Wrong handles in the graph";

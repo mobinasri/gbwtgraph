@@ -6,7 +6,7 @@
 #include <functional>
 #include <mutex>
 
-#include <omp.h>
+//#include <omp.h>
 
 #include "gbwtgraph.h"
 #include "minimizer.h"
@@ -41,7 +41,7 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, PositionPayload
 {
   typedef typename MinimizerIndex<KeyType, PositionPayload>::minimizer_type minimizer_type;
 
-  int threads = omp_get_max_threads();
+  int threads = 1;//omp_get_max_threads();
 
   // Minimizer caching. We only generate the payloads after we have removed duplicate positions.
   std::vector<std::vector<std::pair<minimizer_type, pos_t>>> cache(threads);
@@ -53,7 +53,7 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, PositionPayload
     std::vector<Payload> payload; payload.reserve(current_cache.size());
     payload.reserve(current_cache.size());
     for(auto& minimizer : current_cache) { payload.push_back(get_payload(minimizer.second)); }
-    #pragma omp critical (minimizer_index)
+    //#pragma omp critical (minimizer_index)
     {
       for(size_t i = 0; i < current_cache.size(); i++)
       {
@@ -69,7 +69,7 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, PositionPayload
     std::vector<minimizer_type> minimizers = index.minimizers(seq); // Calls syncmers() when appropriate.
     auto iter = traversal.begin();
     size_t node_start = 0;
-    int thread_id = omp_get_thread_num();
+    int thread_id = 0;//omp_get_thread_num();
     for(minimizer_type& minimizer : minimizers)
     {
       if(minimizer.empty()) { continue; }
@@ -86,7 +86,7 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, PositionPayload
       if(minimizer.is_reverse) { pos = reverse_base_pos(pos, node_length); }
       if(!Position::valid_offset(pos))
       {
-        #pragma omp critical (cerr)
+        //#pragma omp critical (cerr)
         {
           std::cerr << "index_haplotypes(): Node offset " << offset(pos) << " is too large" << std::endl;
         }
@@ -114,7 +114,7 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, Position>& inde
 {
   typedef typename MinimizerIndex<KeyType, Position>::minimizer_type minimizer_type;
 
-  int threads = omp_get_max_threads();
+  int threads = 1;//omp_get_max_threads();
 
   // Minimizer caching. We only generate the payloads after we have removed duplicate positions.
   std::vector<std::vector<std::pair<minimizer_type, Position>>> cache(threads);
@@ -123,7 +123,7 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, Position>& inde
   {
     auto& current_cache = cache[thread_id];
     gbwt::removeDuplicates(current_cache, false);
-    #pragma omp critical (minimizer_index)
+    //#pragma omp critical (minimizer_index)
     {
       for(auto& minimizer : current_cache)
       {
@@ -139,7 +139,7 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, Position>& inde
     std::vector<minimizer_type> minimizers = index.minimizers(seq); // Calls syncmers() when appropriate.
     auto iter = traversal.begin();
     size_t node_start = 0;
-    int thread_id = omp_get_thread_num();
+    int thread_id = 0;//omp_get_thread_num();
     for(minimizer_type& minimizer : minimizers)
     {
       if(minimizer.empty()) { continue; }
@@ -156,7 +156,7 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, Position>& inde
       if(minimizer.is_reverse) { pos = reverse_base_pos(pos, node_length); }
       if(!Position::valid_offset(pos))
       {
-        #pragma omp critical (cerr)
+        //#pragma omp critical (cerr)
         {
           std::cerr << "index_haplotypes(): Node offset " << offset(pos) << " is too large" << std::endl;
         }
@@ -241,14 +241,14 @@ build_kmer_index(const GBWTGraph& graph, KmerIndex<KeyType, Position>& index, si
   typedef Kmer<key_type> kmer_type;
 
   // Kmer caching.
-  int threads = omp_get_max_threads();
+  int threads = 1;//omp_get_max_threads();
   std::vector<std::vector<std::pair<kmer_type, Position>>> cache(threads);
   constexpr size_t KMER_CACHE_SIZE = 1024;
   auto flush_cache = [&](int thread_id)
   {
     auto& current_cache = cache[thread_id];
     gbwt::removeDuplicates(current_cache, false);
-    #pragma omp critical (kmer_index)
+    //#pragma omp critical (kmer_index)
     {
       for(auto& kmer : current_cache)
       {
@@ -264,7 +264,7 @@ build_kmer_index(const GBWTGraph& graph, KmerIndex<KeyType, Position>& index, si
     std::vector<kmer_type> kmers = canonical_kmers<key_type>(seq, k);
     auto iter = traversal.begin();
     size_t node_start = 0;
-    int thread_id = omp_get_thread_num();
+    int thread_id = 0;//omp_get_thread_num();
     for(auto kmer : kmers)
     {
       if(kmer.empty()) { continue; }
@@ -303,7 +303,7 @@ build_kmer_indexes(const GBWTGraph& graph, std::array<KmerIndex<KeyType, Positio
   typedef Kmer<key_type> kmer_type;
 
   // Kmer caching.
-  int threads = omp_get_max_threads();
+  int threads = 1;//omp_get_max_threads();
   std::array<std::mutex, 4> mutexes;
   std::vector<std::array<std::vector<std::pair<kmer_type, Position>>, 4>> cache(threads);
   constexpr size_t KMER_CACHE_SIZE = 1024;
@@ -327,7 +327,7 @@ build_kmer_indexes(const GBWTGraph& graph, std::array<KmerIndex<KeyType, Positio
     std::vector<kmer_type> kmers = canonical_kmers<key_type>(seq, k);
     auto iter = traversal.begin();
     size_t node_start = 0;
-    int thread_id = omp_get_thread_num();
+    int thread_id = 0;//omp_get_thread_num();
     for(auto kmer : kmers)
     {
       if(kmer.empty()) { continue; }

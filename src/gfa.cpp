@@ -1014,8 +1014,7 @@ parse_header_tags(const GFAFile& gfa_file, const GFAParsingParameters& parameter
       {
         // It's not the type we want. Bail out.
         // TODO: Maybe tolerate other people using this tag name?
-        ABSL_LOG(FATAL) << "Expected GFA header tag " + name +
-                                 " to have type Z, not type " + std::string(1, type);
+        ABSL_LOG(FATAL) << "Expected GFA header tag " + name + " to have type Z, not type " + std::string(1, type);
       }
       // Grab the string tag value. It's already in the right format to be a GBWT tag value.
       result[REFERENCE_SAMPLE_LIST_GBWT_TAG] = std::string(value.first, value.first + value.second);
@@ -1077,8 +1076,8 @@ parse_paths(const GFAFile& gfa_file, const std::vector<ConstructionJob>& jobs, c
 
   // Prepare for GBWT construction.
   gbwt::Verbosity::set(gbwt::Verbosity::SILENT);
-  size_t parallel_jobs = std::max(parameters.parallel_jobs, size_t(1));
-  omp_set_num_threads(parallel_jobs);
+  size_t parallel_jobs = size_t(1); //std::max(parameters.parallel_jobs, size_t(1));
+  //omp_set_num_threads(parallel_jobs);
   std::vector<gbwt::GBWT> partial_indexes(jobs.size());
   std::vector<gbwt::vector_type> current_paths(parallel_jobs);
 
@@ -1089,7 +1088,8 @@ parse_paths(const GFAFile& gfa_file, const std::vector<ConstructionJob>& jobs, c
     {
       ABSL_LOG(FATAL) << "Invalid segment " + name;
     }
-    gbwt::vector_type& current_path = current_paths[omp_get_thread_num()];
+    size_t thread_id = 0;//omp_get_thread_num();
+    gbwt::vector_type& current_path = current_paths[thread_id];
     if(is_reverse)
     {
       for(nid_t id = range.second; id > range.first; id--)
@@ -1107,19 +1107,19 @@ parse_paths(const GFAFile& gfa_file, const std::vector<ConstructionJob>& jobs, c
   };
 
   // Build the partial indexes in parallel.
-  #pragma omp parallel for schedule(dynamic, 1)
+  //#pragma omp parallel for schedule(dynamic, 1)
   for(size_t i = 0; i < jobs.size(); i++)
   {
     double job_start = gbwt::readTimer();
     if(parameters.show_progress)
     {
-      #pragma omp critical
+      //#pragma omp critical
       {
         std::cerr << "Starting job " << i << " (" << jobs[i].num_nodes << " nodes, " << jobs[i].p_lines.size() << " paths, " << jobs[i].w_lines.size() << " walks)" << std::endl;
       }
     }
     gbwt::GBWTBuilder builder(node_width, batch_size, parameters.sample_interval);
-    size_t thread_num = omp_get_thread_num();
+    size_t thread_num = 0;//omp_get_thread_num();
     try
     {
       gfa_file.for_these_paths(jobs[i].p_lines, [&](const std::string&) {}, add_segment, [&]()
@@ -1146,7 +1146,7 @@ parse_paths(const GFAFile& gfa_file, const std::vector<ConstructionJob>& jobs, c
     if(parameters.show_progress)
     {
       double seconds = gbwt::readTimer() - job_start;
-      #pragma omp critical
+      //#pragma omp critical
       {
         std::cerr << "Finished job " << i << " in " << seconds << " seconds" << std::endl;
       }
@@ -1412,18 +1412,18 @@ write_links(const GBWTGraph& graph, const SegmentCache& cache, std::ostream& out
   {
     graph.for_each_link([&](const edge_t& edge, const std::string& from, const std::string& to) -> bool
     {
-      size_t thread = omp_get_thread_num();
-      ManualTSVWriter& writer = writers[thread];
+      size_t thread_id = 0;//omp_get_thread_num();
+      ManualTSVWriter& writer = writers[thread_id];
       writer.put('L'); writer.newfield();
       writer.write(from); writer.newfield();
       writer.put((graph.get_is_reverse(edge.first) ? '-' : '+')); writer.newfield();
       writer.write(to); writer.newfield();
       writer.put((graph.get_is_reverse(edge.second) ? '-' : '+')); writer.newfield();
       writer.write("0M"); writer.newline();
-      links[thread]++;
+      links[thread_id]++;
       if(writer.full())
       {
-        #pragma omp critical
+        //#pragma omp critical
         {
           writer.flush();
         }
@@ -1435,18 +1435,18 @@ write_links(const GBWTGraph& graph, const SegmentCache& cache, std::ostream& out
   {
     graph.for_each_edge([&](const edge_t& edge)
     {
-      size_t thread = omp_get_thread_num();
-      ManualTSVWriter& writer = writers[thread];
+      size_t thread_id = 0;//omp_get_thread_num();
+      ManualTSVWriter& writer = writers[thread_id];
       writer.put('L'); writer.newfield();
       writer.write(cache.get(edge.first).first); writer.newfield();
       writer.put((graph.get_is_reverse(edge.first) ? '-' : '+')); writer.newfield();
       writer.write(cache.get(edge.second).first); writer.newfield();
       writer.put((graph.get_is_reverse(edge.second) ? '-' : '+')); writer.newfield();
       writer.write("0M"); writer.newline();
-      links[thread]++;
+      links[thread_id]++;
       if(writer.full())
       {
-        #pragma omp critical
+        //#pragma omp critical
         {
           writer.flush();
         }
@@ -1507,7 +1507,7 @@ write_pan_sn_path(const gbwt::GBWT& index, const SegmentCache& segment_cache, co
   writer.newfield();
   writer.put('*');
   writer.newline();
-  #pragma omp critical
+  //#pragma omp critical
   {
     writer.flush();
   }
@@ -1530,11 +1530,12 @@ write_paths(const GBWTGraph& graph, const SegmentCache& segment_cache, const Lar
     std::vector<ManualTSVWriter> writers(parameters.threads(), ManualTSVWriter(out));
 
     // Some compilers default to older versions of OpenMP that do not support range-based for loops.
-    #pragma omp parallel for schedule(dynamic, 1)
+    //#pragma omp parallel for schedule(dynamic, 1)
     for(size_t i = 0; i < generic_paths.size(); i++)
     {
       gbwt::size_type path_id = generic_paths[i];
-      ManualTSVWriter& writer = writers[omp_get_thread_num()];
+      size_t thread_id = 0;//omp_get_thread_num();
+      ManualTSVWriter& writer = writers[thread_id];
       const gbwt::PathName& path_name = index.metadata.path(path_id);
       gbwt::vector_type path = record_cache.extract(gbwt::Path::encode(path_id, false));
       writer.put('P'); writer.newfield();
@@ -1560,7 +1561,7 @@ write_paths(const GBWTGraph& graph, const SegmentCache& segment_cache, const Lar
       writer.newfield();
       writer.put('*');
       writer.newline();
-      #pragma omp critical
+      //#pragma omp critical
       {
         writer.flush();
       }
@@ -1600,10 +1601,11 @@ write_pan_sn(const GBWTGraph& graph, const SegmentCache& segment_cache, const La
   std::vector<ManualTSVWriter> writers(parameters.threads(), ManualTSVWriter(out));
 
   // Some compilers default to older versions of OpenMP that do not support range-based for loops.
-  #pragma omp parallel for schedule(dynamic, 1)
+  //#pragma omp parallel for schedule(dynamic, 1)
   for(gbwt::size_type path_id = 0; path_id < index.metadata.paths(); path_id++)
   {
-    ManualTSVWriter& writer = writers[omp_get_thread_num()];
+    size_t thread_id = 0;//omp_get_thread_num();
+    ManualTSVWriter& writer = writers[thread_id];
     const gbwt::PathName& path_name = index.metadata.path(path_id);
     std::string sample_name;
     if(index.metadata.hasSampleNames()) {
@@ -1637,13 +1639,14 @@ write_walks(const GBWTGraph& graph, const SegmentCache& segment_cache, const Lar
   const gbwt::GBWT& index = *(graph.index);
   std::vector<ManualTSVWriter> writers(parameters.threads(), ManualTSVWriter(out));
 
-  #pragma omp parallel for schedule(dynamic, 1)
+  //#pragma omp parallel for schedule(dynamic, 1)
   for(gbwt::size_type path_id = 0; path_id < index.metadata.paths(); path_id++)
   {
     const gbwt::PathName& path_name = index.metadata.path(path_id);
     if(path_name.sample == ref_sample) { continue; }
     walks++;
-    ManualTSVWriter& writer = writers[omp_get_thread_num()];
+    size_t thread_id = 0;//omp_get_thread_num();
+    ManualTSVWriter& writer = writers[thread_id];
     gbwt::vector_type path = record_cache.extract(gbwt::Path::encode(path_id, false));
     size_t length = 0;
     for(auto node : path) { length += graph.get_length(GBWTGraph::node_to_handle(node)); }
@@ -1667,7 +1670,7 @@ write_walks(const GBWTGraph& graph, const SegmentCache& segment_cache, const Lar
       offset += segment.second;
     }
     writer.newline();
-    #pragma omp critical
+    //#pragma omp critical
     {
       writer.flush();
     }
@@ -1694,7 +1697,8 @@ write_all_paths(const GBWTGraph& graph, const SegmentCache& segment_cache, const
 
   for(gbwt::size_type seq_id = 0; seq_id < index.sequences(); seq_id += 2)
   {
-    ManualTSVWriter& writer = writers[omp_get_thread_num()];
+    size_t thread_id = 0;//omp_get_thread_num();
+    ManualTSVWriter& writer = writers[thread_id];
     gbwt::size_type path_id = seq_id / 2;
     gbwt::vector_type path = record_cache.extract(seq_id);
     writer.put('P'); writer.newfield();
@@ -1711,7 +1715,7 @@ write_all_paths(const GBWTGraph& graph, const SegmentCache& segment_cache, const
     writer.newfield();
     writer.put('*');
     writer.newline();
-    #pragma omp critical
+    //#pragma omp critical
     {
       writer.flush();
     }
@@ -1777,7 +1781,8 @@ gbwt_to_gfa(const GBWTGraph& graph, std::ostream& out, const GFAExtractionParame
   writer.flush();
 
   // Write the links and paths using multiple threads.
-  omp_set_num_threads(parameters.threads());
+  //size_t threads = 1;//parameters.threads();
+  //omp_set_num_threads(threads);
   write_links(graph, segment_cache, out, parameters);
   if(sufficient_metadata)
   {

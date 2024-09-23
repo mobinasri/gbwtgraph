@@ -10,7 +10,7 @@
 
 #include <gbwtgraph/gbwtgraph.h>
 
-#include "shared.h"
+//#include "shared.h"
 
 using namespace gbwtgraph;
 
@@ -572,16 +572,16 @@ TEST_F(GraphOperations, ForEachHandle)
   }
 
   found_handles.clear();
-  int old_thread_count = omp_get_max_threads();
-  omp_set_num_threads(2);
+  //int old_thread_count = 1;//omp_get_max_threads();
+  //omp_set_num_threads(2);
   this->graph.for_each_handle([&](const handle_t& handle)
   {
-    #pragma omp critical
+    //#pragma omp critical
     {
       found_handles.push_back(handle);
     }
   }, false);
-  omp_set_num_threads(old_thread_count);
+  //omp_set_num_threads(old_thread_count);
   ASSERT_EQ(found_handles.size(), correct_nodes.size()) << "Wrong number of handles in parallel iteration";
   for(handle_t& handle : found_handles)
   {

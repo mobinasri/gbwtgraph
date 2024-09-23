@@ -2,7 +2,6 @@
 #include <gbwtgraph/subgraph.h>
 #include <gbwtgraph/internal.h>
 
-#include <sdsl/bit_vectors.hpp>
 
 #include <queue>
 #include <map>
@@ -20,7 +19,7 @@ constexpr size_t PathIndex::DEFAULT_SAMPLE_INTERVAL;
 PathIndex::PathIndex(const GBZ& gbz, size_t sample_interval) :
   sequence_positions(gbz.graph.named_paths.size()), gbwt_positions(gbz.graph.named_paths.size())
 {
-  #pragma omp parallel for schedule(dynamic, 1)
+  //#pragma omp parallel for schedule(dynamic, 1)
   for(size_t i = 0; i < gbz.graph.named_paths.size(); i++)
   {
     size_t length = 0;
