@@ -4,7 +4,7 @@
 #include <memory>
 #include <list>
 
-#include "dynamic_gbwt.h"
+#include <gbwt/dynamic_gbwt.h>
 
 #include "gbwtgraph.h"
 
