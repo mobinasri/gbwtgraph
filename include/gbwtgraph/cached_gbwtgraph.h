@@ -32,13 +32,13 @@ public:
   CachedGBWTGraph(CachedGBWTGraph&& source);
   virtual ~CachedGBWTGraph();
 
-  explicit CachedGBWTGraph(const GBWTGraph& graph);
+  explicit CachedGBWTGraph(const GBWTGraph<>& graph);
 
   void swap(CachedGBWTGraph& another);
   CachedGBWTGraph& operator=(const CachedGBWTGraph& source);
   CachedGBWTGraph& operator=(CachedGBWTGraph&& source);
 
-  const GBWTGraph* graph;
+  const GBWTGraph<>* graph;
   gbwt::CachedGBWT cache;
 
 //------------------------------------------------------------------------------
@@ -129,10 +129,10 @@ public:
 public:
 
   // Convert gbwt::node_type to handle_t.
-  static handle_t node_to_handle(gbwt::node_type node) { return GBWTGraph::node_to_handle(node); }
+  static handle_t node_to_handle(gbwt::node_type node) { return GBWTGraph<>::node_to_handle(node); }
 
   // Convert handle_t to gbwt::node_type.
-  static gbwt::node_type handle_to_node(const handle_t& handle) { return GBWTGraph::handle_to_node(handle); }
+  static gbwt::node_type handle_to_node(const handle_t& handle) { return GBWTGraph<>::handle_to_node(handle); }
 
   // Get node sequence as a pointer and length.
   view_type get_sequence_view(const handle_t& handle) const { return this->graph->get_sequence_view(handle); }

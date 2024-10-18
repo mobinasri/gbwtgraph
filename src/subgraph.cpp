@@ -16,7 +16,8 @@ constexpr size_t PathIndex::DEFAULT_SAMPLE_INTERVAL;
 
 //------------------------------------------------------------------------------
 
-PathIndex::PathIndex(const GBZ& gbz, size_t sample_interval) :
+template <typename CharAllocatorType>
+PathIndex::PathIndex(const GBZ<CharAllocatorType>& gbz, size_t sample_interval) :
   sequence_positions(gbz.graph.named_paths.size()), gbwt_positions(gbz.graph.named_paths.size())
 {
   //#pragma omp parallel for schedule(dynamic, 1)
@@ -33,6 +34,11 @@ PathIndex::PathIndex(const GBZ& gbz, size_t sample_interval) :
     this->sequence_positions[i] = sdsl::sd_vector<>(builder);
   }
 }
+
+template PathIndex::PathIndex(const GBZ<gbwt::SharedMemCharAllocatorType>& gbz,
+                              size_t sample_interval);
+template PathIndex::PathIndex(const GBZ<std::allocator<char>>& gbz,
+                              size_t sample_interval);
 
 std::pair<size_t, gbwt::edge_type>
 PathIndex::sampled_position(path_handle_t handle, size_t offset) const
@@ -104,8 +110,9 @@ output_type(SubgraphQuery::HaplotypeOutput output)
   }
 }
 
+template <typename CharAllocatorType>
 std::string
-SubgraphQuery::to_string(const GBZ& gbz) const
+SubgraphQuery::to_string(const GBZ<CharAllocatorType>& gbz) const
 {
   if(this->type == QueryType::path_offset_query)
   {
@@ -131,8 +138,9 @@ SubgraphQuery::to_string(const GBZ& gbz) const
   Helper functions for the constructor.
 */
 
+template <typename CharAllocatorType>
 std::pair<pos_t, gbwt::edge_type>
-find_position(const GBZ& gbz, const PathIndex& path_index, const SubgraphQuery& query)
+find_position(const GBZ<CharAllocatorType>& gbz, const PathIndex& path_index, const SubgraphQuery& query)
 {
   std::pair<size_t, gbwt::edge_type> position = path_index.sampled_position(query.path, query.offset);
   if(position.second == gbwt::invalid_edge())
@@ -143,7 +151,7 @@ find_position(const GBZ& gbz, const PathIndex& path_index, const SubgraphQuery& 
 
   while(true)
   {
-    size_t node_len = gbz.graph.get_length(GBWTGraph::node_to_handle(position.second.first));
+    size_t node_len = gbz.graph.get_length(GBWTGraph<>::node_to_handle(position.second.first));
     if(position.first + node_len > query.offset)
     {
       pos_t graph_pos = make_pos_t(gbwt::Node::id(position.second.first), gbwt::Node::is_reverse(position.second.first), query.offset - position.first);
@@ -159,8 +167,9 @@ find_position(const GBZ& gbz, const PathIndex& path_index, const SubgraphQuery& 
   }
 }
 
+template <typename CharAllocatorType>
 std::set<nid_t>
-find_subgraph(const GBWTGraph& graph, pos_t position, size_t context)
+find_subgraph(const GBWTGraph<CharAllocatorType>& graph, pos_t position, size_t context)
 {
   std::set<nid_t> result;
 
@@ -213,21 +222,23 @@ append_edit(std::vector<std::pair<char, size_t>>& edits, char op, size_t length)
   }
 }
 
+template <typename CharAllocatorType>
 size_t
-path_interval_length(const GBWTGraph& graph, const gbwt::vector_type& path, std::pair<size_t, size_t> interval)
+path_interval_length(const GBWTGraph<CharAllocatorType>& graph, const gbwt::vector_type& path, std::pair<size_t, size_t> interval)
 {
   size_t result = 0;
   for(size_t i = interval.first; i < interval.second; i++)
   {
-    result += graph.get_length(GBWTGraph::node_to_handle(path[i]));
+    result += graph.get_length(GBWTGraph<CharAllocatorType>::node_to_handle(path[i]));
   }
   return result;
 }
 
+template <typename CharAllocatorType>
 // Create edits for two path intervals, which are assumed to be diverging.
 void
 append_edits(
-  std::vector<std::pair<char, size_t>>& edits, const GBWTGraph& graph,
+  std::vector<std::pair<char, size_t>>& edits, const GBWTGraph<CharAllocatorType>& graph,
   const gbwt::vector_type& reference, std::pair<size_t, size_t> ref_interval,
   const gbwt::vector_type& path, std::pair<size_t, size_t> path_interval
 )
@@ -245,9 +256,10 @@ append_edits(
   }
 }
 
+template <typename CharAllocatorType>
 // Returns a CIGAR string.
 std::string
-align_paths(const GBWTGraph& graph, const gbwt::vector_type& reference, const gbwt::vector_type& path)
+align_paths(const GBWTGraph<CharAllocatorType>& graph, const gbwt::vector_type& reference, const gbwt::vector_type& path)
 {
   // TODO: This uses the basic quadratic longest common subsequence algorithm
   // over the node sequences. If the subgraph is large, we could use something
@@ -295,7 +307,7 @@ align_paths(const GBWTGraph& graph, const gbwt::vector_type& reference, const gb
   for(const std::pair<size_t, size_t>& match : lcs)
   {
     append_edits(edits, graph, reference, std::make_pair(ref_offset, match.second), path, std::make_pair(path_offset, match.first));
-    append_edit(edits, 'M', graph.get_length(GBWTGraph::node_to_handle(path[match.first])));
+    append_edit(edits, 'M', graph.get_length(GBWTGraph<CharAllocatorType>::node_to_handle(path[match.first])));
     path_offset = match.first + 1;
     ref_offset = match.second + 1;
   }
@@ -316,10 +328,11 @@ align_paths(const GBWTGraph& graph, const gbwt::vector_type& reference, const gb
   Private member functions used in the constructor.
 */
 
+template <typename CharAllocatorType>
 void
-Subgraph::extract_paths(const GBZ& gbz, const SubgraphQuery& query, const std::pair<pos_t, gbwt::edge_type>& ref_pos)
+Subgraph::extract_paths(const GBZ<CharAllocatorType>& gbz, const SubgraphQuery& query, const std::pair<pos_t, gbwt::edge_type>& ref_pos)
 {
-  const GBWTGraph& graph = gbz.graph;
+  const auto& graph = gbz.graph;
   const gbwt::GBWT& index = gbz.index;
 
   // For each GBWT node in the subgraph, mark which GBWT offsets have a
@@ -375,7 +388,7 @@ Subgraph::extract_paths(const GBZ& gbz, const SubgraphQuery& query, const std::p
           is_ref = true;
         }
         path.push_back(curr.first);
-        path_length += graph.get_length(GBWTGraph::node_to_handle(curr.first));
+        path_length += graph.get_length(GBWTGraph<>::node_to_handle(curr.first));
         curr = index.LF(curr);
       }
       if(is_ref)
@@ -447,7 +460,8 @@ Subgraph::update_paths(const SubgraphQuery& query)
 
 //------------------------------------------------------------------------------
 
-Subgraph::Subgraph(const GBZ& gbz, const PathIndex* path_index, const SubgraphQuery& query) :
+template <typename CharAllocatorType>
+Subgraph::Subgraph(const GBZ<CharAllocatorType>& gbz, const PathIndex* path_index, const SubgraphQuery& query) :
   reference_path(std::numeric_limits<size_t>::max()),
   reference_handle(handlegraph::as_path_handle(std::numeric_limits<size_t>::max())),
   reference_start(0)
@@ -498,16 +512,33 @@ Subgraph::Subgraph(const GBZ& gbz, const PathIndex* path_index, const SubgraphQu
   }
 }
 
+template Subgraph::Subgraph(const GBZ<gbwt::SharedMemCharAllocatorType>& gbz,
+                            const PathIndex* path_index,
+                            const SubgraphQuery& query);
+template Subgraph::Subgraph(const GBZ<std::allocator<char>>& gbz,
+                            const PathIndex* path_index,
+                            const SubgraphQuery& query);
+
 //------------------------------------------------------------------------------
 
+template <typename CharAllocatorType>
 gbwt::FullPathName
-Subgraph::reference_path_name(const GBZ& gbz) const
+Subgraph::reference_path_name(const GBZ<CharAllocatorType>& gbz) const
 {
   gbwt::size_type path_id = gbz.graph.handle_to_path(this->reference_handle);
   gbwt::FullPathName path_name = gbz.index.metadata.fullPath(path_id);
   path_name.offset = this->reference_start;
   return path_name;
 }
+
+template
+gbwt::FullPathName
+Subgraph::reference_path_name(
+    const GBZ<gbwt::SharedMemCharAllocatorType>& gbz) const;
+
+template
+gbwt::FullPathName
+Subgraph::reference_path_name(const GBZ<std::allocator<char>>& gbz) const;
 
 const size_t*
 Subgraph::weight(size_t path_id) const
@@ -524,8 +555,9 @@ Subgraph::cigar(size_t path_id) const
   return &(this->path_cigars[path_id]);
 }
 
+template <typename CharAllocatorType>
 void
-Subgraph::to_gfa(const GBZ& gbz, std::ostream& out) const
+Subgraph::to_gfa(const GBZ<CharAllocatorType>& gbz, std::ostream& out) const
 {
   TSVWriter writer(out);
 
@@ -553,10 +585,10 @@ Subgraph::to_gfa(const GBZ& gbz, std::ostream& out) const
     for(bool is_reverse : { false, true })
     {
       gbwt::node_type from = gbwt::Node::encode(node, is_reverse);
-      handle_t handle = GBWTGraph::node_to_handle(from);
+      handle_t handle = GBWTGraph<>::node_to_handle(from);
       gbz.graph.follow_edges(handle, false, [&](const handle_t& next)
       {
-        gbwt::node_type to = GBWTGraph::handle_to_node(next);
+        gbwt::node_type to = GBWTGraph<>::handle_to_node(next);
         nid_t successor = gbwt::Node::id(to);
         if(this->nodes.find(successor) != this->nodes.end() && edge_is_canonical(from, to))
         {
@@ -595,6 +627,9 @@ Subgraph::to_gfa(const GBZ& gbz, std::ostream& out) const
 
   writer.flush();
 }
+
+template void
+Subgraph::to_gfa(const GBZ<std::allocator<char>>& gbz, std::ostream& out) const;
 
 //------------------------------------------------------------------------------
 

@@ -151,7 +151,7 @@ write_gfa_walk(
   writer.write(path_name.sample_name); writer.newfield();
   // NOTE: It was a mistake to define NO_PHASE as unsigned -1.
   // GFA uses 0, which is much more convenient.
-  size_t haplotype = (path_name.haplotype == GBWTGraph::NO_PHASE ? 0 : path_name.haplotype);
+  size_t haplotype = (path_name.haplotype == GBWTGraph<>::NO_PHASE ? 0 : path_name.haplotype);
   writer.write(haplotype); writer.newfield();
   writer.write(path_name.contig_name); writer.newfield();
   writer.write(path_name.offset); writer.newfield();
@@ -318,7 +318,8 @@ struct LargeRecordCache
 // Sample (sequence offset, GBWT position) at the start of a node approximately
 // every `sample_interval` bp, with the first sample at offset 0.
 // If `length` is not nullptr, it will be set to the length of the path.
-std::vector<std::pair<size_t, gbwt::edge_type>> sample_path_positions(const GBZ& gbz, path_handle_t path, size_t sample_interval, size_t* length = nullptr);
+template <typename CharAllocatorType>
+std::vector<std::pair<size_t, gbwt::edge_type>> sample_path_positions(const GBZ<CharAllocatorType>& gbz, path_handle_t path, size_t sample_interval, size_t* length = nullptr);
 
 //------------------------------------------------------------------------------
 

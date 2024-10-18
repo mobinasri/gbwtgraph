@@ -7,6 +7,11 @@
 #include <gbwt/cached_gbwt.h>
 #include <gbwt/metadata.h>
 
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+
+
 #include "utils.h"
 
 /*
@@ -15,6 +20,8 @@
 
 namespace gbwtgraph
 {
+
+namespace bi = boost::interprocess;
 
 //------------------------------------------------------------------------------
 
@@ -45,24 +52,29 @@ namespace gbwtgraph
     1  The initial version.
 */
 
+template <typename CharAllocatorType = std::allocator<char>>
 class GBWTGraph : public PathHandleGraph, public SerializableHandleGraph, public NamedNodeBackTranslation
 {
 public:
-  GBWTGraph(); // Call (deserialize() and set_gbwt()) or simple_sds_load() before using the graph.
+  GBWTGraph(bi::managed_shared_memory* shared_memory = nullptr); // Call (deserialize() and set_gbwt()) or simple_sds_load() before using the graph.
   GBWTGraph(const GBWTGraph& source);
   GBWTGraph(GBWTGraph&& source);
   virtual ~GBWTGraph();
 
   // Build the graph from another `HandleGraph` and an optional named segment space over it.
-  GBWTGraph(const gbwt::GBWT& gbwt_index, const HandleGraph& sequence_source, const NamedNodeBackTranslation* segment_space = nullptr);
+  GBWTGraph(const gbwt::GBWT& gbwt_index, const HandleGraph& sequence_source, const NamedNodeBackTranslation* segment_space = nullptr, bi::managed_shared_memory* shared_memory = nullptr);
 
   // Build the graph (and possibly the translation) from a `SequenceSource` object.
   // If the translation is present, some parts of the construction are multithreaded.
-  GBWTGraph(const gbwt::GBWT& gbwt_index, const SequenceSource& sequence_source);
+  GBWTGraph(const gbwt::GBWT& gbwt_index, const SequenceSource& sequence_source, bi::managed_shared_memory* shared_memory = nullptr);
 
   // Returns a GBWTGraph for the subgraph defined by the given GBWT index.
   // This is faster than using the graph as a HandleGraph in the constructor.
-  GBWTGraph subgraph(const gbwt::GBWT& gbwt_index) const;
+  GBWTGraph<std::allocator<char>> subgraph(const gbwt::GBWT& gbwt_index) const;
+
+  void set_shared_memory(bi::managed_shared_memory* shared_memory) {
+    this->shared_memory = shared_memory;
+  }
 
   // Makes some sanity checks on the internal consistency of the structure.
   // Requires that the GBWT index has been set.
@@ -112,11 +124,13 @@ public:
   const gbwt::GBWT* index;
 
   Header            header;
-  gbwt::StringArray sequences;
+  gbwt::StringArray<CharAllocatorType> sequences;
   sdsl::bit_vector  real_nodes;
 
+  bi::managed_shared_memory* shared_memory;
+
   // Segment to node translation. Node `v` maps to segment `node_to_segment.predecessor(v)->first`.
-  gbwt::StringArray segments;
+  gbwt::StringArray<> segments;
   sdsl::sd_vector<> node_to_segment;
 
   // Cached named path information.
@@ -622,11 +636,11 @@ public:
 
 //------------------------------------------------------------------------------
 
+  // Construction helpers.
+  void determine_real_nodes();
 private:
   friend class CachedGBWTGraph;
 
-  // Construction helpers.
-  void determine_real_nodes();
   void cache_named_paths();
 
   void copy(const GBWTGraph& source);
@@ -638,7 +652,7 @@ private:
   // Runs of nonexistent nodes become segments with empty names.
   // Throws if the translation cannot be represented (i.e. segments aren't
   // forward strands of contiguous ascending node ID ranges).
-  std::pair<gbwt::StringArray, sdsl::sd_vector<>>
+  std::pair<gbwt::StringArray<>, sdsl::sd_vector<>>
   copy_translation(const NamedNodeBackTranslation& translation) const;
 
   size_t node_offset(gbwt::node_type node) const { return node - this->index->firstNode(); }
@@ -654,7 +668,8 @@ private:
   from subsequent nodes. If no extensions are possible, a shorter substring of
   length >= window_size also qualifies as a window.
 */
-void for_each_haplotype_window(const GBWTGraph& graph, size_t window_size,
+template <typename CharAllocatorType>
+void for_each_haplotype_window(const GBWTGraph<CharAllocatorType>& graph, size_t window_size,
                                const std::function<void(const std::vector<handle_t>&, const std::string&)>& lambda,
                                bool parallel);
 
@@ -663,8 +678,9 @@ void for_each_haplotype_window(const GBWTGraph& graph, size_t window_size,
   initial node is at least window_size, it becomes a separate window. Extension windows
   then take only the last window_size - 1 bases from it.
 */
+template <typename CharAllocatorType>
 void for_each_nonredundant_window(
-  const GBWTGraph& graph, size_t window_size,
+  const GBWTGraph<CharAllocatorType>& graph, size_t window_size,
   const std::function<void(const std::vector<handle_t>&, const std::string&)>& lambda,
   bool parallel);
 

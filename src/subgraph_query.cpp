@@ -31,7 +31,8 @@ struct Config
   size_t context = 100;
 };
 
-std::unique_ptr<PathIndex> create_path_index(const GBZ& gbz, const SubgraphQuery& query)
+template <typename CharAllocatorType>
+std::unique_ptr<PathIndex> create_path_index(const GBZ<CharAllocatorType>& gbz, const SubgraphQuery& query)
 {
   if(query.type == SubgraphQuery::QueryType::path_offset_query || query.type == SubgraphQuery::QueryType::path_interval_query)
   {
@@ -40,7 +41,8 @@ std::unique_ptr<PathIndex> create_path_index(const GBZ& gbz, const SubgraphQuery
   return nullptr;
 }
 
-path_handle_t find_reference_path(const GBZ& gbz, const Config& config)
+template <typename CharAllocatorType>
+path_handle_t find_reference_path(const GBZ<CharAllocatorType>& gbz, const Config& config)
 {
   const gbwt::Metadata& metadata = gbz.index.metadata;
   std::vector<gbwt::size_type> path_ids = metadata.findPaths(metadata.sample(config.sample_name), metadata.contig(config.contig_name));
@@ -52,7 +54,8 @@ path_handle_t find_reference_path(const GBZ& gbz, const Config& config)
   return gbz.graph.path_to_handle(path_ids.front());
 }
 
-SubgraphQuery create_query(const GBZ& gbz, const Config& config)
+template <typename CharAllocatorType>
+SubgraphQuery create_query(const GBZ<CharAllocatorType>& gbz, const Config& config)
 {
   switch(config.query_type)
   {
@@ -84,7 +87,7 @@ main(int argc, char** argv)
   {
     Config config(argc, argv);
 
-    GBZ gbz;
+    GBZ<std::allocator<char>> gbz;
     sdsl::simple_sds::load_from(gbz, config.graph_file);
     SubgraphQuery query = create_query(gbz, config);
     std::unique_ptr<PathIndex> path_index = create_path_index(gbz, query);

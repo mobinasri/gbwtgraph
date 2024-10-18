@@ -219,7 +219,7 @@ get_path_haplotype([[maybe_unused]] const gbwt::Metadata& metadata, const gbwt::
     return PathMetadata::NO_HAPLOTYPE;
   }
   // Otherwise it's just stored, but we need to detect the sentinel
-  return path_name.phase == gbwtgraph::GBWTGraph::NO_PHASE ? PathMetadata::NO_HAPLOTYPE : path_name.phase;
+  return path_name.phase == gbwtgraph::GBWTGraph<>::NO_PHASE ? PathMetadata::NO_HAPLOTYPE : path_name.phase;
 }
 
 size_t
@@ -503,10 +503,10 @@ SequenceSource::force_translate(const std::string& segment_name) const
   }
 }
 
-std::pair<gbwt::StringArray, sdsl::sd_vector<>>
+std::pair<gbwt::StringArray<>, sdsl::sd_vector<>>
 SequenceSource::invert_translation(const std::function<bool(std::pair<nid_t, nid_t>)>& is_present) const
 {
-  std::pair<gbwt::StringArray, sdsl::sd_vector<>> result;
+  std::pair<gbwt::StringArray<>, sdsl::sd_vector<>> result;
 
   // Invert the translation.
   // This stores semiopen ranges of node identifiers corresponding to segments, and views to their segment names.
@@ -704,7 +704,7 @@ MetadataBuilder::add_path(PathSense sense, const std::string& sample_name, const
   if(haplotype == PathMetadata::NO_HAPLOTYPE)
   {
     // Record a sentinel phase number
-    path_name.phase = gbwtgraph::GBWTGraph::NO_PHASE;
+    path_name.phase = gbwtgraph::GBWTGraph<>::NO_PHASE;
   }
   else
   {

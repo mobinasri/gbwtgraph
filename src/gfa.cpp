@@ -1309,7 +1309,8 @@ GFAExtractionParameters::get_mode(const std::string& name)
 // that small string optimization avoids unnecessary memory allocations.
 struct SegmentCache
 {
-  SegmentCache(const GBWTGraph& graph, bool use_translation) :
+  template <typename CharAllocatorType>
+  SegmentCache(const GBWTGraph<CharAllocatorType>& graph, bool use_translation) :
     graph(graph), segments((graph.index->sigma() - graph.index->firstNode()) / 2)
   {
     if(use_translation)
@@ -1331,7 +1332,7 @@ struct SegmentCache
     {
       graph.for_each_handle([&](const handle_t& handle)
       {
-        size_t relative = (GBWTGraph::handle_to_node(handle) - graph.index->firstNode()) / 2;
+        size_t relative = (GBWTGraph<CharAllocatorType>::handle_to_node(handle) - graph.index->firstNode()) / 2;
         this->segments[relative] = std::pair<size_t, size_t>(this->names.size(), 1);
         this->names.emplace_back(std::to_string(graph.get_id(handle)));
       });
@@ -1342,7 +1343,7 @@ struct SegmentCache
 
   std::pair<view_type, size_t> get(const handle_t& handle) const
   {
-    return this->get(GBWTGraph::handle_to_node(handle));
+    return this->get(GBWTGraph<>::handle_to_node(handle));
   }
 
   std::pair<view_type, size_t> get(gbwt::node_type node) const
@@ -1352,7 +1353,7 @@ struct SegmentCache
     return std::make_pair(str_to_view(this->names[offset]), this->segments[relative].second);
   }
 
-  const GBWTGraph& graph;
+  const GBWTGraph<>& graph;
 
   // This vector goes over the same range as `graph.real_nodes`. The first component
   // is offset in `names` and the second is the length of the segment in nodes.
@@ -1362,8 +1363,9 @@ struct SegmentCache
 
 //------------------------------------------------------------------------------
 
+template <typename CharAllocatorType>
 void
-write_segments(const GBWTGraph& graph, const SegmentCache& cache, TSVWriter& writer, bool show_progress)
+write_segments(const GBWTGraph<CharAllocatorType>& graph, const SegmentCache& cache, TSVWriter& writer, bool show_progress)
 {
   double start = gbwt::readTimer();
   size_t segments = 0;
@@ -1395,8 +1397,9 @@ write_segments(const GBWTGraph& graph, const SegmentCache& cache, TSVWriter& wri
   }
 }
 
+template <typename CharAllocatorType>
 void
-write_links(const GBWTGraph& graph, const SegmentCache& cache, std::ostream& out, const GFAExtractionParameters& parameters)
+write_links(const GBWTGraph<CharAllocatorType>& graph, const SegmentCache& cache, std::ostream& out, const GFAExtractionParameters& parameters)
 {
   double start = gbwt::readTimer();
   if(parameters.show_progress)
@@ -1478,7 +1481,7 @@ write_pan_sn_path(const gbwt::GBWT& index, const SegmentCache& segment_cache, co
   writer.put('P'); writer.newfield();
   writer.write(sample_name);
   writer.put('#');
-  writer.write(path_name.phase == GBWTGraph::NO_PHASE ? PathMetadata::NO_HAPLOTYPE : path_name.phase);
+  writer.write(path_name.phase == GBWTGraph<>::NO_PHASE ? PathMetadata::NO_HAPLOTYPE : path_name.phase);
   writer.put('#');
   if(index.metadata.hasContigNames()) { writer.write(index.metadata.contig(path_name.contig)); }
   else { writer.write(path_name.contig); }
@@ -1513,8 +1516,9 @@ write_pan_sn_path(const gbwt::GBWT& index, const SegmentCache& segment_cache, co
   }
 }
 
+template <typename CharAllocatorType>
 void
-write_paths(const GBWTGraph& graph, const SegmentCache& segment_cache, const LargeRecordCache& record_cache, std::ostream& out, gbwt::size_type ref_sample, const GFAExtractionParameters& parameters)
+write_paths(const GBWTGraph<CharAllocatorType>& graph, const SegmentCache& segment_cache, const LargeRecordCache& record_cache, std::ostream& out, gbwt::size_type ref_sample, const GFAExtractionParameters& parameters)
 {
   double start = gbwt::readTimer();
   if(parameters.show_progress)
@@ -1579,8 +1583,9 @@ write_paths(const GBWTGraph& graph, const SegmentCache& segment_cache, const Lar
   }
 }
 
+template <typename CharAllocatorType>
 void
-write_pan_sn(const GBWTGraph& graph, const SegmentCache& segment_cache, const LargeRecordCache& record_cache, std::ostream& out, const GFAExtractionParameters& parameters)
+write_pan_sn(const GBWTGraph<CharAllocatorType>& graph, const SegmentCache& segment_cache, const LargeRecordCache& record_cache, std::ostream& out, const GFAExtractionParameters& parameters)
 {
   double start = gbwt::readTimer();
   if(parameters.show_progress)
@@ -1625,9 +1630,10 @@ write_pan_sn(const GBWTGraph& graph, const SegmentCache& segment_cache, const La
   }
 }
 
+template <typename CharAllocatorType>
 // Write haplotype paths as walks
 void
-write_walks(const GBWTGraph& graph, const SegmentCache& segment_cache, const LargeRecordCache& record_cache, std::ostream& out, gbwt::size_type ref_sample, const GFAExtractionParameters& parameters)
+write_walks(const GBWTGraph<CharAllocatorType>& graph, const SegmentCache& segment_cache, const LargeRecordCache& record_cache, std::ostream& out, gbwt::size_type ref_sample, const GFAExtractionParameters& parameters)
 {
   double start = gbwt::readTimer();
   std::atomic<size_t> walks(0);
@@ -1649,12 +1655,12 @@ write_walks(const GBWTGraph& graph, const SegmentCache& segment_cache, const Lar
     ManualTSVWriter& writer = writers[thread_id];
     gbwt::vector_type path = record_cache.extract(gbwt::Path::encode(path_id, false));
     size_t length = 0;
-    for(auto node : path) { length += graph.get_length(GBWTGraph::node_to_handle(node)); }
+    for(auto node : path) { length += graph.get_length(GBWTGraph<>::node_to_handle(node)); }
     writer.put('W'); writer.newfield();
     if(index.metadata.hasSampleNames()) { writer.write(index.metadata.sample(path_name.sample)); }
     else { writer.write(path_name.sample); }
     writer.newfield();
-    writer.write(path_name.phase == GBWTGraph::NO_PHASE ? PathMetadata::NO_HAPLOTYPE : path_name.phase);
+    writer.write(path_name.phase == GBWTGraph<>::NO_PHASE ? PathMetadata::NO_HAPLOTYPE : path_name.phase);
     writer.newfield();
     if(index.metadata.hasContigNames()) { writer.write(index.metadata.contig(path_name.contig)); }
     else { writer.write(path_name.contig); }
@@ -1683,8 +1689,9 @@ write_walks(const GBWTGraph& graph, const SegmentCache& segment_cache, const Lar
   }
 }
 
+template <typename CharAllocatorType>
 void
-write_all_paths(const GBWTGraph& graph, const SegmentCache& segment_cache, const LargeRecordCache& record_cache, std::ostream& out, const GFAExtractionParameters& parameters)
+write_all_paths(const GBWTGraph<CharAllocatorType>& graph, const SegmentCache& segment_cache, const LargeRecordCache& record_cache, std::ostream& out, const GFAExtractionParameters& parameters)
 {
   double start = gbwt::readTimer();
   if(parameters.show_progress)
@@ -1730,8 +1737,9 @@ write_all_paths(const GBWTGraph& graph, const SegmentCache& segment_cache, const
 
 //------------------------------------------------------------------------------
 
+template <typename CharAllocatorType>
 void
-gbwt_to_gfa(const GBWTGraph& graph, std::ostream& out, const GFAExtractionParameters& parameters)
+gbwt_to_gfa(const GBWTGraph<CharAllocatorType>& graph, std::ostream& out, const GFAExtractionParameters& parameters)
 {
   bool sufficient_metadata = graph.index->hasMetadata() && graph.index->metadata.hasPathNames();
 

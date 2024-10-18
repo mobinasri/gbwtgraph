@@ -34,9 +34,9 @@ namespace gbwtgraph
   cross from a reverse node to a forward node (from a forward node to a reverse
   node).
 */
-template<class KeyType>
+template<class KeyType, typename CharAllocatorType>
 void
-index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, PositionPayload>& index,
+index_haplotypes(const GBWTGraph<CharAllocatorType>& graph, MinimizerIndex<KeyType, PositionPayload>& index,
                  const std::function<Payload(const pos_t&)>& get_payload)
 {
   typedef typename MinimizerIndex<KeyType, PositionPayload>::minimizer_type minimizer_type;
@@ -108,9 +108,9 @@ index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, PositionPayload
   index. This version is used for minimizer indexes without payloads. The number
   of threads can be set through OpenMP.
 */
-template<class KeyType>
+template<class KeyType, typename CharAllocatorType>
 void
-index_haplotypes(const GBWTGraph& graph, MinimizerIndex<KeyType, Position>& index)
+index_haplotypes(const GBWTGraph<CharAllocatorType>& graph, MinimizerIndex<KeyType, Position>& index)
 {
   typedef typename MinimizerIndex<KeyType, Position>::minimizer_type minimizer_type;
 
@@ -233,9 +233,9 @@ canonical_kmers(const std::string& seq, size_t k)
   if `include(key)` returns `true`. The number of threads can be set through
   OpenMP.
 */
-template<class KeyType, class Predicate>
+template<class KeyType, class Predicate, typename CharAllocatorType>
 void
-build_kmer_index(const GBWTGraph& graph, KmerIndex<KeyType, Position>& index, size_t k, const Predicate& include)
+build_kmer_index(const GBWTGraph<CharAllocatorType>& graph, KmerIndex<KeyType, Position>& index, size_t k, const Predicate& include)
 {
   typedef KeyType key_type;
   typedef Kmer<key_type> kmer_type;
@@ -295,9 +295,9 @@ build_kmer_index(const GBWTGraph& graph, KmerIndex<KeyType, Position>& index, si
   Index the haplotypes in the graph. Insert the kmers into the provided indexes
   according to the middle base. The number of threads can be set through OpenMP.
 */
-template<class KeyType>
+template<class KeyType, typename CharAllocatorType>
 void
-build_kmer_indexes(const GBWTGraph& graph, std::array<KmerIndex<KeyType, Position>, 4>& indexes, size_t k)
+build_kmer_indexes(const GBWTGraph<CharAllocatorType>& graph, std::array<KmerIndex<KeyType, Position>, 4>& indexes, size_t k)
 {
   typedef KeyType key_type;
   typedef Kmer<key_type> kmer_type;
@@ -381,9 +381,9 @@ build_kmer_indexes(const GBWTGraph& graph, std::array<KmerIndex<KeyType, Positio
     versions uses less memory, is slower, and does not parallelize as
     well.
 */
-template<class KeyType>
+template<class KeyType, typename CharAllocatorType>
 std::vector<KeyType>
-frequent_kmers(const GBWTGraph& graph, size_t k, size_t threshold, bool space_efficient, size_t hash_table_size = KmerIndex<KeyType, Position>::INITIAL_CAPACITY)
+frequent_kmers(const GBWTGraph<CharAllocatorType>& graph, size_t k, size_t threshold, bool space_efficient, size_t hash_table_size = KmerIndex<KeyType, Position>::INITIAL_CAPACITY)
 {
   typedef KmerIndex<KeyType, Position> index_type;
   typedef typename index_type::cell_type cell_type;

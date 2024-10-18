@@ -4,7 +4,7 @@
 #include <memory>
 #include <list>
 
-#include <gbwt/dynamic_gbwt.h>
+#include "dynamic_gbwt.h"
 
 #include "gbwtgraph.h"
 
@@ -177,7 +177,8 @@ gfa_to_gbwt(const std::string& gfa_filename, const GFAParsingParameters& paramet
 
   If the GBWT does not contain path names, all GBWT paths will be written as P-lines.
 */
-void gbwt_to_gfa(const GBWTGraph& graph, std::ostream& out, const GFAExtractionParameters& parameters = GFAExtractionParameters());
+template <typename CharAllocatorType>
+void gbwt_to_gfa(const GBWTGraph<CharAllocatorType>& graph, std::ostream& out, const GFAExtractionParameters& parameters = GFAExtractionParameters());
 
 extern const std::string GFA_EXTENSION; // ".gfa"
 

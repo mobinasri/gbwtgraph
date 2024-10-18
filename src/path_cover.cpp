@@ -208,7 +208,7 @@ struct SimpleCoverage
 
 struct LocalHaplotypes
 {
-  typedef GBWTGraph graph_t;
+  typedef GBWTGraph<> graph_t;
 
   struct coverage_t
   {
@@ -260,7 +260,7 @@ struct LocalHaplotypes
     graph.follow_paths(state, false, [&](const gbwt::BidirectionalState& next) -> bool
     {
       success = true;
-      handle_t handle = GBWTGraph::node_to_handle(next.forward.node);
+      handle_t handle = GBWTGraph<>::node_to_handle(next.forward.node);
       if(!acyclic && path.size() + 1 < k) // Node coverage.
       {
         size_t first = find_first(node_coverage, graph.get_id(handle));
@@ -304,7 +304,7 @@ struct LocalHaplotypes
     graph.follow_paths(state, true, [&](const gbwt::BidirectionalState& prev) -> bool
     {
       success = true;
-      handle_t handle = GBWTGraph::node_to_handle(prev.backward.node);
+      handle_t handle = GBWTGraph<>::node_to_handle(prev.backward.node);
       handle = graph.flip(handle); // Get the correct orientation.
       if(path.size() + 1 < k) // Node coverage.
       {
@@ -700,19 +700,19 @@ local_haplotypes(
   // If the graph we were given is a GBWTGraph using the same GBWT index, we can
   // use it directly for sampling local haplotypes. Otherwise we have to build a
   // temporary graph.
-  const GBWTGraph* gbwt_graph = dynamic_cast<const GBWTGraph*>(&graph);
+  const GBWTGraph<>* gbwt_graph = dynamic_cast<const GBWTGraph<>*>(&graph);
   if(gbwt_graph != nullptr)
   {
     if(gbwt_graph->index != &index) { gbwt_graph = nullptr; }
   }
-  GBWTGraph created_gbwt_graph;
+  GBWTGraph<> created_gbwt_graph;
   if(gbwt_graph == nullptr)
   {
     if(parameters.show_progress)
     {
       std::cerr << "Building a temporary GBWTGraph" << std::endl;
     }
-    created_gbwt_graph = GBWTGraph(index, graph);
+    created_gbwt_graph = GBWTGraph<>(index, graph);
     gbwt_graph = &created_gbwt_graph;
   }
 

@@ -36,7 +36,8 @@ public:
 
   // Build the index for the paths in the given GBZ graph.
   // The work is parallelized over the paths using OpenMP threads.
-  explicit PathIndex(const GBZ& gbz, size_t sample_interval = DEFAULT_SAMPLE_INTERVAL);
+  template<typename CharAllocatorType>
+  explicit PathIndex(const GBZ<CharAllocatorType>& gbz, size_t sample_interval = DEFAULT_SAMPLE_INTERVAL);
 
   PathIndex(const PathIndex& source) = default;
   PathIndex(PathIndex&& source) = default;
@@ -106,7 +107,8 @@ struct SubgraphQuery
   static SubgraphQuery node(nid_t node, size_t context, HaplotypeOutput output);
 
   // Returns a string representation of the query.
-  std::string to_string(const GBZ& gbz) const;
+  template<typename CharAllocatorType>
+  std::string to_string(const GBZ<CharAllocatorType>& gbz) const;
 };
 
 //------------------------------------------------------------------------------
@@ -127,7 +129,8 @@ public:
   // Build a subgraph from the given query.
   // If the query is based on a path, a path index must be provided.
   // Throws `std::runtime_error` on error.
-  Subgraph(const GBZ& gbz, const PathIndex* path_index, const SubgraphQuery& query);
+  template<typename CharAllocatorType>
+  Subgraph(const GBZ<CharAllocatorType>& gbz, const PathIndex* path_index, const SubgraphQuery& query);
 
   Subgraph(const Subgraph& source) = default;
   Subgraph(Subgraph&& source) = default;
@@ -161,14 +164,18 @@ public:
   size_t reference_start;
 
   // Convert the subgraph to GFA.
-  void to_gfa(const GBZ& gbz, std::ostream& out) const;
+  template<typename CharAllocatorType>
+  void to_gfa(const GBZ<CharAllocatorType>& gbz, std::ostream& out) const;
 
-  gbwt::FullPathName reference_path_name(const GBZ& gbz) const;
+  template<typename CharAllocatorType>
+  gbwt::FullPathName reference_path_name(const GBZ<CharAllocatorType>& gbz) const;
 
   const std::string* cigar(size_t path_id) const;
+
 private:
   // Extract the paths within the subgraph and determine reference path information.
-  void extract_paths(const GBZ& gbz, const SubgraphQuery& query, const std::pair<pos_t, gbwt::edge_type>& ref_pos);
+  template <typename CharAllocatorType>
+  void extract_paths(const GBZ<CharAllocatorType>& gbz, const SubgraphQuery& query, const std::pair<pos_t, gbwt::edge_type>& ref_pos);
 
   // Update the paths according to query type.
   void update_paths(const SubgraphQuery& query);

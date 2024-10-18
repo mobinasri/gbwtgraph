@@ -196,7 +196,7 @@ public:
     bool generic_reference) const
   {
     std::string reference_sample = (generic_reference ? REFERENCE_PATH_SAMPLE_NAME : "GRCh38");
-    size_t reference_haplotype = (generic_reference ? GBWTGraph::NO_PHASE : 0);
+    size_t reference_haplotype = (generic_reference ? GBWTGraph<>::NO_PHASE : 0);
     samples.push_back(reference_sample);
     samples.push_back("HG002");
     samples.push_back("HG003");

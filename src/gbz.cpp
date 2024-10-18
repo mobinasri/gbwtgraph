@@ -1,34 +1,58 @@
 #include "absl/log/absl_log.h"
+#include <boost/interprocess/sync/named_mutex.hpp>
+#include <gbwt/gbwt.h>
+#include <gbwt/utils.h>
+#include <gbwtgraph/gbwtgraph.h>
+#include <gbwtgraph/utils.h>
+#include <sdsl/simple_sds.hpp>
 #include <gbwtgraph/gbz.h>
+#include <cstddef>
+#include <cstdint>
+#include <iostream>
+#include <istream>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
 
 namespace gbwtgraph
 {
 
+
+namespace bi = boost::interprocess;
+
+
 //------------------------------------------------------------------------------
 
 // Numerical class constants.
+template <typename CharAllocatorType>
+constexpr std::uint32_t GBZ<CharAllocatorType>::Header::TAG;
 
-constexpr std::uint32_t GBZ::Header::TAG;
-constexpr std::uint32_t GBZ::Header::VERSION;
+template <typename CharAllocatorType>
+constexpr std::uint32_t GBZ<CharAllocatorType>::Header::VERSION;
 
-constexpr std::uint64_t GBZ::Header::FLAG_MASK;
+template <typename CharAllocatorType>
+constexpr std::uint64_t GBZ<CharAllocatorType>::Header::FLAG_MASK;
 
 //------------------------------------------------------------------------------
 
 // Other class variables.
 
-const std::string GBZ::EXTENSION = ".gbz";
+template <typename CharAllocatorType>
+const std::string GBZ<CharAllocatorType>::EXTENSION = ".gbz";
 
 //------------------------------------------------------------------------------
 
-GBZ::Header::Header() :
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::Header::Header() :
   tag(TAG), version(VERSION),
   flags(0)
 {
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::Header::check() const
+GBZ<CharAllocatorType>::Header::check() const
 {
   if(this->tag != TAG)
   {
@@ -53,8 +77,9 @@ GBZ::Header::check() const
   }
 }
 
+template <typename CharAllocatorType>
 bool
-GBZ::Header::operator==(const Header& another) const
+GBZ<CharAllocatorType>::Header::operator==(const Header& another) const
 {
   return (this->tag == another.tag && this->version == another.version &&
           this->flags == another.flags);
@@ -62,28 +87,34 @@ GBZ::Header::operator==(const Header& another) const
 
 //------------------------------------------------------------------------------
 
-GBZ::GBZ()
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::GBZ(bi::managed_shared_memory* shared_memory)
 {
+  this->graph.set_shared_memory(shared_memory);
   this->add_source();
   this->set_gbwt();
+  this->shared_memory = shared_memory;
 }
 
-GBZ::GBZ(const GBZ& source)
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::GBZ(const GBZ& source)
 {
   this->copy(source);
 }
 
-GBZ::GBZ(GBZ&& source)
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::GBZ(GBZ&& source)
 {
   *this = std::move(source);
 }
 
-GBZ::~GBZ()
-{
-}
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::~GBZ()
+{}
 
+template <typename CharAllocatorType>
 void
-GBZ::swap(GBZ& another)
+GBZ<CharAllocatorType>::swap(GBZ& another)
 {
   if(&another == this) { return; }
 
@@ -97,15 +128,17 @@ GBZ::swap(GBZ& another)
   another.set_gbwt_address();
 }
 
-GBZ&
-GBZ::operator=(const GBZ& source)
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>&
+GBZ<CharAllocatorType>::operator=(const GBZ& source)
 {
   if(&source != this) { this->copy(source); }
   return *this;
 }
 
-GBZ&
-GBZ::operator=(GBZ&& source)
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>&
+GBZ<CharAllocatorType>::operator=(GBZ&& source)
 {
   if(&source != this)
   {
@@ -120,8 +153,9 @@ GBZ::operator=(GBZ&& source)
   return *this;
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::copy(const GBZ& source)
+GBZ<CharAllocatorType>::copy(const GBZ& source)
 {
   this->header = source.header;
   this->tags = source.tags;
@@ -132,22 +166,25 @@ GBZ::copy(const GBZ& source)
   this->set_gbwt_address();
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::reset_tags()
+GBZ<CharAllocatorType>::reset_tags()
 {
   this->tags.clear();
   this->add_source();
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::add_source()
+GBZ<CharAllocatorType>::add_source()
 {
   this->tags.set(Version::SOURCE_KEY, Version::SOURCE_VALUE);
 }
 
 //------------------------------------------------------------------------------
 
-GBZ::GBZ(std::unique_ptr<gbwt::GBWT>& index, std::unique_ptr<SequenceSource>& source)
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::GBZ(std::unique_ptr<gbwt::GBWT>& index, std::unique_ptr<SequenceSource>& source, bi::managed_shared_memory* shared_memory)
 {
   if(index == nullptr || source == nullptr)
   {
@@ -156,10 +193,12 @@ GBZ::GBZ(std::unique_ptr<gbwt::GBWT>& index, std::unique_ptr<SequenceSource>& so
 
   this->add_source();
   this->index = std::move(*index); index.reset();
-  this->graph = GBWTGraph(this->index, *source); source.reset();
+  this->graph = GBWTGraph<CharAllocatorType>(this->index, *source, shared_memory); source.reset();
+  this->shared_memory = shared_memory;
 }
 
-GBZ::GBZ(std::unique_ptr<gbwt::GBWT>& index, const HandleGraph& source)
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::GBZ(std::unique_ptr<gbwt::GBWT>& index, const HandleGraph& source, bi::managed_shared_memory* shared_memory)
 {
   if(index == nullptr)
   {
@@ -168,37 +207,47 @@ GBZ::GBZ(std::unique_ptr<gbwt::GBWT>& index, const HandleGraph& source)
 
   this->add_source();
   this->index = std::move(*index); index.reset();
-  this->graph = GBWTGraph(this->index, source);
+  this->graph = GBWTGraph<CharAllocatorType>(this->index, source, nullptr, shared_memory);
+  this->shared_memory = shared_memory;
 }
 
-GBZ::GBZ(const gbwt::GBWT& index, const SequenceSource& source) :
-  index(index), graph(this->index, source)
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::GBZ(const gbwt::GBWT& index, const SequenceSource& source, bi::managed_shared_memory* shared_memory) :
+  index(index)
 {
   this->add_source();
+  this->graph = GBWTGraph<CharAllocatorType>(this->index, source, shared_memory);
+  this->shared_memory = shared_memory;
 }
 
-GBZ::GBZ(const gbwt::GBWT& index, const HandleGraph& source) :
-  index(index), graph(this->index, source)
+template <typename CharAllocatorType>
+GBZ<CharAllocatorType>::GBZ(const gbwt::GBWT& index, const HandleGraph& source, bi::managed_shared_memory* shared_memory) :
+  index(index)
 {
   this->add_source();
+  this->graph = GBWTGraph<CharAllocatorType>(this->index, source, nullptr, shared_memory);
+  this->shared_memory = shared_memory;
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::set_gbwt()
+GBZ<CharAllocatorType>::set_gbwt()
 {
   this->graph.set_gbwt(this->index);
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::set_gbwt_address()
+GBZ<CharAllocatorType>::set_gbwt_address()
 {
   this->graph.set_gbwt_address(this->index);
 }
 
 //------------------------------------------------------------------------------
 
+template <typename CharAllocatorType>
 void
-GBZ::simple_sds_serialize(std::ostream& out) const
+GBZ<CharAllocatorType>::simple_sds_serialize(std::ostream& out) const
 {
   sdsl::simple_sds::serialize_value(this->header, out);
   this->tags.simple_sds_serialize(out);
@@ -206,18 +255,20 @@ GBZ::simple_sds_serialize(std::ostream& out) const
   this->graph.simple_sds_serialize(out);
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::simple_sds_serialize(const gbwt::GBWT& index, const GBWTGraph& graph, std::ostream& out)
+GBZ<CharAllocatorType>::simple_sds_serialize(const gbwt::GBWT& index, const GBWTGraph<CharAllocatorType>& graph, std::ostream& out)
 {
-  GBZ empty;
+  GBZ<std::allocator<char>> empty;
   sdsl::simple_sds::serialize_value(empty.header, out);
   empty.tags.simple_sds_serialize(out);
   index.simple_sds_serialize(out);
   graph.simple_sds_serialize(out);
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::simple_sds_load(std::istream& in)
+GBZ<CharAllocatorType>::simple_sds_load(std::istream& in)
 {
   this->header = sdsl::simple_sds::load_value<Header>(in);
   this->header.check();
@@ -232,8 +283,9 @@ GBZ::simple_sds_load(std::istream& in)
   this->graph.simple_sds_load(in, this->index);
 }
 
+template <typename CharAllocatorType>
 size_t
-GBZ::simple_sds_size() const
+GBZ<CharAllocatorType>::simple_sds_size() const
 {
   size_t result = sdsl::simple_sds::value_size(this->header);
   result += this->tags.simple_sds_size();
@@ -242,16 +294,18 @@ GBZ::simple_sds_size() const
   return result;
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::serialize_to_files(const std::string& gbwt_name, const std::string& graph_name, bool simple_sds_graph) const
+GBZ<CharAllocatorType>::serialize_to_files(const std::string& gbwt_name, const std::string& graph_name, bool simple_sds_graph) const
 {
   sdsl::simple_sds::serialize_to(this->index, gbwt_name);
   if(simple_sds_graph) { sdsl::simple_sds::serialize_to(this->graph, graph_name); }
   else { this->graph.serialize(graph_name); }
 }
 
+template <typename CharAllocatorType>
 void
-GBZ::load_from_files(const std::string& gbwt_name, const std::string& graph_name)
+GBZ<CharAllocatorType>::load_from_files(const std::string& gbwt_name, const std::string& graph_name)
 {
   this->tags.clear();
   this->add_source();
@@ -259,6 +313,9 @@ GBZ::load_from_files(const std::string& gbwt_name, const std::string& graph_name
   this->set_gbwt();
   this->graph.deserialize(graph_name);
 }
+
+template class GBZ<std::allocator<char>>;
+template class GBZ<gbwt::SharedMemCharAllocatorType>;
 
 //------------------------------------------------------------------------------
 

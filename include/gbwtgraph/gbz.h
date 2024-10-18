@@ -2,6 +2,12 @@
 #define GBWTGRAPH_GBZ_H
 
 #include "gbwtgraph.h"
+#include "utils.h"
+
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+
 
 /*
   gbz.h: GBZ file format.
@@ -9,6 +15,9 @@
 
 namespace gbwtgraph
 {
+
+
+namespace bi = boost::interprocess;
 
 //------------------------------------------------------------------------------
 
@@ -23,29 +32,30 @@ namespace gbwtgraph
     1  The initial version.
 */
 
+template <typename CharAllocatorType>
 class GBZ
 {
 public:
-  GBZ();
+  GBZ(bi::managed_shared_memory* shared_memory = nullptr);
   GBZ(const GBZ& source);
   GBZ(GBZ&& source);
   ~GBZ();
 
   // Build GBZ from the structures returned by `gfa_to_gbwt()`.
   // Resets the pointers to `nullptr`.
-  GBZ(std::unique_ptr<gbwt::GBWT>& index, std::unique_ptr<SequenceSource>& source);
+  GBZ(std::unique_ptr<gbwt::GBWT>& index, std::unique_ptr<SequenceSource>& source, bi::managed_shared_memory* shared_memory = nullptr);
 
   // Build GBZ from a GBWT index and a `HandleGraph`.
   // Resets the GBWT pointer to `nullptr`.
-  GBZ(std::unique_ptr<gbwt::GBWT>& index, const HandleGraph& source);
+  GBZ(std::unique_ptr<gbwt::GBWT>& index, const HandleGraph& source, bi::managed_shared_memory* shared_memory = nullptr);
 
   // Build GBZ from a GBWT index and a sequence source.
   // Note that the GBZ will store a copy of the GBWT index.
-  GBZ(const gbwt::GBWT& index, const SequenceSource& source);
+  GBZ(const gbwt::GBWT& index, const SequenceSource& source, bi::managed_shared_memory* shared_memory = nullptr);
 
   // Build GBZ from a GBWT index and a `HandleGraph`.
   // Note that the GBZ will store a copy of the GBWT index.
-  GBZ(const gbwt::GBWT& index, const HandleGraph& source);
+  GBZ(const gbwt::GBWT& index, const HandleGraph& source, bi::managed_shared_memory* shared_memory = nullptr);
 
   void swap(GBZ& another);
   GBZ& operator=(const GBZ& source);
@@ -83,7 +93,8 @@ public:
   Header     header;
   gbwt::Tags tags;
   gbwt::GBWT index;
-  GBWTGraph  graph;
+  GBWTGraph<CharAllocatorType>  graph;
+  bi::managed_shared_memory* shared_memory;
 
   const static std::string EXTENSION; // ".gbz"
 
@@ -91,7 +102,7 @@ public:
   void simple_sds_serialize(std::ostream& out) const;
 
   // Serialize the given GBWT and GBWTGraph objects in the GBZ format.
-  static void simple_sds_serialize(const gbwt::GBWT& index, const GBWTGraph& graph, std::ostream& out);
+  static void simple_sds_serialize(const gbwt::GBWT& index, const GBWTGraph<CharAllocatorType>& graph, std::ostream& out);
 
   // Deserialize or decompress the GBZ from the input stream.
   void simple_sds_load(std::istream& in);
@@ -118,5 +129,6 @@ private:
 //------------------------------------------------------------------------------
 
 } // namespace gbwtgraph
+
 
 #endif // GBWTGRAPH_GBZ_H
