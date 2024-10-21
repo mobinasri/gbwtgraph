@@ -41,7 +41,7 @@ int
 main(int argc, char** argv)
 {
   Config config(argc, argv);
-  GBZ gbz;
+  GBZ<> gbz;
   sdsl::simple_sds::load_from(gbz, config.filename);
 
   if(config.graph)

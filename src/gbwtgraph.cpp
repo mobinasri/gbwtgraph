@@ -2320,6 +2320,14 @@ for_each_haplotype_window(const GBWTGraph<CharAllocatorType>& graph, size_t wind
   for_each_haplotype_window_impl(graph, window_size, lambda, parallel, false);
 }
 
+template void for_each_haplotype_window(const GBWTGraph<gbwt::SharedMemCharAllocatorType>& graph, size_t window_size,
+                               const std::function<void(const std::vector<handle_t>&, const std::string&)>& lambda,
+                               bool parallel);
+
+template void for_each_haplotype_window(const GBWTGraph<std::allocator<char>>& graph, size_t window_size,
+                               const std::function<void(const std::vector<handle_t>&, const std::string&)>& lambda,
+                               bool parallel);
+
 template <typename CharAllocatorType>
 void
 for_each_nonredundant_window(
@@ -2329,6 +2337,18 @@ for_each_nonredundant_window(
 {
   for_each_haplotype_window_impl(graph, window_size, lambda, parallel, true);
 }
+
+template void
+for_each_nonredundant_window(
+  const GBWTGraph<gbwt::SharedMemCharAllocatorType>& graph, size_t window_size,
+  const std::function<void(const std::vector<handle_t>&, const std::string&)>& lambda,
+  bool parallel);
+
+template void
+for_each_nonredundant_window(
+  const GBWTGraph<std::allocator<char>>& graph, size_t window_size,
+  const std::function<void(const std::vector<handle_t>&, const std::string&)>& lambda,
+  bool parallel);
 
 //------------------------------------------------------------------------------
 
