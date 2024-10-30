@@ -1922,7 +1922,7 @@ GBWTGraph<CharAllocatorType>::deserialize_members(std::istream& in)
       ABSL_LOG(FATAL) << "GBWTGraph: A GBWT index is required for loading simple-sds format";
     }
     {
-      gbwt::StringArray<> forward_only;
+      gbwt::StringArray<CharAllocatorType> forward_only(this->shared_memory, "StringArray_forward_only");
       forward_only.simple_sds_load(in);
       this->sequences = gbwt::StringArray<CharAllocatorType>(2 * forward_only.size(),
       [&](size_t offset) -> size_t
@@ -1935,7 +1935,8 @@ GBWTGraph<CharAllocatorType>::deserialize_members(std::istream& in)
         if(offset & 1) { reverse_complement_in_place(result); }
         return result;
       },
-      this->shared_memory);
+      this->shared_memory,
+      "StringArray_final");
     }
     this->determine_real_nodes();
   }
